@@ -1,45 +1,29 @@
-# Bitácora — Dataset sintético y calibración (espesador)
+# Bitácora — Dataset sintético y calibración
 
-## Objetivo del dataset
-Crear un dataset sintético realista para:
-- entrenar un clasificador de riesgo/evento,
-- probar detección temprana (horizonte 30 min),
-- simular modo manual y acciones operacionales,
-- incluir fallas típicas de instrumentación.
+## Objetivo
+Generar un dataset sintético realista para prototipar detección temprana de deterioro de clarificación, sin exponer datos sensibles.
 
-## Umbrales
-- **Spec (referencia):** 80 NTU
-- **Warning (evento ML):** 70 NTU sostenido (label)
+## Umbrales y etiquetas
+- `event_limit_NTU = 70` (warning): umbral para labels y calibración.
+- `spec_limit_NTU = 80` (spec): KPI operacional para reporting.
 
-Motivo: con un evento sostenido sobre 80, el P95 tiende a subir demasiado. Separar warning vs spec permite:
-- mantener **prevalencia objetivo (4–6%)**,
-- mantener distribución realista (P95 ~70–95),
-- seguir reportando “sobre 80” como KPI.
+Labels:
+- `event_now`: evento sostenido sobre `event_limit_NTU` en señal CLEAN.
+- `target_event_30m`: evento a 30 minutos (shift del `event_now`).
 
-## Señal CLEAN vs MEDIDA
-- `Overflow_Turb_NTU_clean`: proceso (sin fallas), usada para labels.
-- `Overflow_Turb_NTU`: sensor (con fallas), usada para features/demos de data quality.
+## CLEAN vs MEDIDA
+- CLEAN: representa el estado del proceso sin fallas de instrumentación (ground truth).
+- MEDIDA: incorpora fallas típicas (missing/stuck/spikes/drift).
 
-Motivo: evita que spikes/drift distorsionen la definición del evento (ground truth).
+Motivación: entrenar con condiciones realistas sin contaminar el “ground truth”.
 
-## Requisitos alcanzados (target)
-- Prevalencia de eventos (label): 4–6%
-- Modo MANUAL: 15–30%
-- P95 turbidez CLEAN: 70–95 NTU
-- P99 turbidez CLEAN: 120–180 NTU (cap ajustado a 160 para evitar saturación)
+## Componentes simulados
+- Campañas: CLAY, UF (y opcional FLOC).
+- Control: AUTO/MANUAL + acciones de operador (OperatorAction).
+- Calidad de datos: faltantes y fallas controladas por tasa.
 
-## Componentes modelados
-- Campañas:
-  - **CLAY:** aumento de finos (PSD fines index).
-  - **UF:** degradación intermitente de capacidad underflow.
-  - **FLOC:** subdosificación (déficit de floculante).
-- Control:
-  - `ControlMode` AUTO/MANUAL.
-  - `OperatorAction` (aumentar UF, aumentar floc, etc).
-- Instrumentación:
-  - missing/stuck/spikes/drift en tags seleccionados.
-
-## Próximos pasos (modelado)
-- Features temporales (lags, rolling mean/std, ratios).
-- Validación temporal (split por tiempo).
-- Métricas: PR-AUC, Recall@precision, lead time efectivo.
+## Criterios de realismo (targets)
+- Eventos: 4–6%
+- MANUAL: 15–30%
+- P95 CLEAN: 70–95 NTU
+- P99 CLEAN: 120–180 NTU
