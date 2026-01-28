@@ -1,8 +1,13 @@
 """
-simulate_fixed.py (v4) - synthetic tailings thickener dataset with:
+simulate_fixed.py (v5) - synthetic tailings thickener dataset with:
 - clean process truth turbidity (Overflow_Turb_NTU_clean)
 - measured turbidity with instrumentation failures (Overflow_Turb_NTU)
 - events labeled from clean turbidity (ground truth)
+- explicit feed dilution action with physically consistent total feed flow:
+    Qf_pulp_m3h (pulp stream)
+    Qf_dilution_m3h (added water)
+    Qf_total_m3h (pulp + added water)
+    Qf_m3h is kept for backward compatibility and equals Qf_total_m3h
 
 Outputs:
 - data/processed/thickener_timeseries.parquet (latest)
@@ -46,6 +51,11 @@ class SimConfig:
     deadband: float = 0.33
     turb_power: float = 1.75
 
+    # explicit feed dilution (operational action)
+    feed_dilution_events_per_30d: float = 3.0
+    feed_dilution_duration_min: Tuple[int, int] = (60, 240)
+    feed_dilution_factor_range: Tuple[float, float] = (0.75, 0.90)  # target multiplier on Solids_f_pct
+
     # failures
     missing_rate_per_tag: float = 0.01
     spikes_per_day_per_tag: float = 2.0
@@ -59,6 +69,7 @@ class SimConfig:
 
 
 def _default_drift_magnitude() -> Dict[str, float]:
+    # Qf_m3h now represents total feed flow to thickener (pulp + dilution)
     return {"Qf_m3h": 0.08, "Solids_u_pct": -0.04, "Overflow_Turb_NTU": -10.0}
 
 
@@ -115,17 +126,60 @@ def simulate_clean(cfg: SimConfig) -> tuple[pd.DataFrame, dict]:
 
     regime = build_regime_schedule(cfg, n)
 
-    # Feed
+    # Feed (pulp stream, before dilution water is added)
     qf_base = rng.uniform(450, 650)
     diurnal = 80 * np.sin(np.linspace(0, 2 * np.pi * cfg.days, n))
     qf_rw = np.cumsum(rng.normal(0, 0.8, n))
-    Qf = np.clip(qf_base + diurnal + qf_rw + rng.normal(0, 25, n), 250, 900)
+    Qf_pulp = np.clip(qf_base + diurnal + qf_rw + rng.normal(0, 25, n), 250, 900)
 
-    Sol_f = np.clip(
-        14 + 2.0 * np.sin(np.linspace(0, 4 * np.pi * cfg.days, n)) + 0.002 * (Qf - 550) + rng.normal(0, 1.2, n),
+    Sol_f_base = np.clip(
+        14 + 2.0 * np.sin(np.linspace(0, 4 * np.pi * cfg.days, n)) + 0.002 * (Qf_pulp - 550) + rng.normal(0, 1.2, n),
         8,
         22,
     )
+
+    # ---------------------------------------------------------------------
+    # Explicit feed dilution schedule
+    # ---------------------------------------------------------------------
+    FeedDilution_On = np.zeros(n, dtype=int)
+    FeedDilution_factor = np.ones(n, dtype=float)
+
+    points_per_hour = int(60 / cfg.freq_min)
+
+    dilution_segments = int(cfg.feed_dilution_events_per_30d * (cfg.days / 30.0))
+    for _ in range(dilution_segments):
+        # bias start times toward CLAY window
+        if rng.random() < 0.75:
+            idx_candidates = np.where(regime == "CLAY")[0]
+        else:
+            idx_candidates = np.arange(n)
+        if len(idx_candidates) == 0:
+            continue
+
+        start = int(rng.choice(idx_candidates))
+        dur_min = rng.integers(cfg.feed_dilution_duration_min[0], cfg.feed_dilution_duration_min[1] + 1)
+        dur = max(1, int(dur_min / cfg.freq_min))
+        end = min(n, start + dur)
+
+        # factor is the target multiplier on final Solids_f_pct
+        factor = rng.uniform(cfg.feed_dilution_factor_range[0], cfg.feed_dilution_factor_range[1])
+
+        FeedDilution_On[start:end] = 1
+        FeedDilution_factor[start:end] = factor
+
+    # Convert factor -> required dilution water to achieve lower solids%, keeping solids mass with pulp stream.
+    # If target is: Sol_f_final = Sol_f_base * factor,
+    # then Qf_total = Qf_pulp / factor  =>  Qf_dilution = Qf_total - Qf_pulp = Qf_pulp*(1/factor - 1)
+    Qf_dilution = np.zeros(n, dtype=float)
+    mask_dil = FeedDilution_On.astype(bool)
+    Qf_dilution[mask_dil] = Qf_pulp[mask_dil] * (1.0 / FeedDilution_factor[mask_dil] - 1.0)
+
+    Qf_total = Qf_pulp + Qf_dilution
+
+    # Recompute final feed solids % by mixing.
+    # solids mass proxy from pulp stream stays constant; only total volumetric flow increases.
+    Ms = Qf_pulp * (Sol_f_base / 100.0)
+    Sol_f = np.clip(100.0 * Ms / np.maximum(Qf_total, 1e-6), 6, 22)
 
     # Fines
     PSD = np.zeros(n)
@@ -140,7 +194,8 @@ def simulate_clean(cfg: SimConfig) -> tuple[pd.DataFrame, dict]:
         PSD[i] = 0.982 * (PSD[i - 1] if i > 0 else target) + 0.018 * target + rng.normal(0, 0.01)
     PSD = np.clip(PSD, 0.05, 0.85)
 
-    solids_load = Qf * (Sol_f / 100.0)
+    # solids load now uses total feed flow and final solids %
+    solids_load = Qf_total * (Sol_f / 100.0)
     load_norm = normalize_01(solids_load)
 
     # Floc
@@ -160,7 +215,8 @@ def simulate_clean(cfg: SimConfig) -> tuple[pd.DataFrame, dict]:
             cap = rng.uniform(0.70, 0.92)
             UF_capacity[start:start + duration] = np.minimum(UF_capacity[start:start + duration], cap)
 
-    Qu = np.clip((0.35 * Qf + rng.normal(0, 18, n)) * UF_capacity, 80, 450)
+    # Underflow depends on total feed flow (what thickener actually sees)
+    Qu = np.clip((0.35 * Qf_total + rng.normal(0, 18, n)) * UF_capacity, 80, 450)
 
     # Bed + torque
     bed = np.zeros(n)
@@ -239,7 +295,7 @@ def simulate_clean(cfg: SimConfig) -> tuple[pd.DataFrame, dict]:
     # Stress components
     fines_c = normalize_01(PSD)
     load_c = normalize_01(solids_load)
-    var_c = normalize_01(rolling_std(Qf, window=12) + rolling_std(Sol_f, window=12))
+    var_c = normalize_01(rolling_std(Qf_total, window=12) + rolling_std(Sol_f, window=12))
     floc_need = 8 + 16 * PSD + 10 * load_c
     floc_deficit = np.clip((floc_need - Floc) / 25.0, 0.0, 1.0)
     floc_c = floc_deficit
@@ -292,8 +348,23 @@ def simulate_clean(cfg: SimConfig) -> tuple[pd.DataFrame, dict]:
     df = pd.DataFrame(
         {
             "timestamp": index,
-            "Qf_m3h": Qf,
+
+            # Feed flows (explicit)
+            "Qf_pulp_m3h": Qf_pulp,
+            "Qf_dilution_m3h": Qf_dilution,
+            "Qf_total_m3h": Qf_total,
+
+            # Backward-compatible SCADA-like tag for feed to thickener
+            "Qf_m3h": Qf_total,
+
+            # Feed solids after dilution mixing
             "Solids_f_pct": Sol_f,
+
+            # Explicit dilution action
+            "FeedDilution_On": FeedDilution_On,
+            "FeedDilution_factor": FeedDilution_factor,
+
+            # Process / control
             "PSD_fines_idx": PSD,
             "Floc_gpt": Floc,
             "UF_capacity_factor": UF_capacity,
@@ -305,6 +376,8 @@ def simulate_clean(cfg: SimConfig) -> tuple[pd.DataFrame, dict]:
             "Overflow_Turb_NTU": turb_clean,        # measured (will be corrupted later)
             "ControlMode": control_mode,
             "OperatorAction": OperatorAction,
+
+            # constants and labels
             "spec_limit_NTU": cfg.spec_limit_NTU,
             "event_limit_NTU": cfg.event_limit_NTU,
             "event_now": event_now,
@@ -323,6 +396,8 @@ def simulate_clean(cfg: SimConfig) -> tuple[pd.DataFrame, dict]:
         "effective_q99": float(np.quantile(effective, 0.99)),
         "scale": float(best_scale),
         "event_rate": float(df["event_now"].mean()),
+        "dilution_on_rate": float(df["FeedDilution_On"].mean()),
+        "qf_total_q95": float(np.quantile(Qf_total, 0.95)),
     }
     return df, debug
 
@@ -335,7 +410,8 @@ def inject_failures(cfg: SimConfig, df: pd.DataFrame) -> pd.DataFrame:
     points_per_day = int(24 * 60 / cfg.freq_min)
     points_per_hour = int(60 / cfg.freq_min)
 
-    # NOTE: only corrupt measured turbidity, never the clean truth
+    # NOTE: only corrupt measured turbidity and SCADA-like tags, never the clean truth
+    # Qf_m3h is treated as the SCADA tag for total feed flow to thickener
     tags = ["Qf_m3h", "Solids_u_pct", "Overflow_Turb_NTU"]
 
     for tag in tags:
@@ -382,7 +458,7 @@ def inject_failures(cfg: SimConfig, df: pd.DataFrame) -> pd.DataFrame:
 
         # clip
         if tag == "Qf_m3h":
-            x = np.clip(x, 0.0, 1000.0)
+            x = np.clip(x, 0.0, 1200.0)  # allow total flow including dilution
         elif tag == "Solids_u_pct":
             x = np.clip(x, 0.0, 100.0)
         else:
