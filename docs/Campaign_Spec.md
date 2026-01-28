@@ -1,88 +1,82 @@
-# Campaign Spec — Campañas sintéticas y objetivos de modelado
+# Campaign Spec — Campañas sintéticas (CLAY / UF / FLOC)
 
-Este documento describe las **campañas** (mecanismos causales sintéticos) modeladas en el simulador para inducir deterioro de turbidez en overflow.
+Este simulador incluye campañas que representan mecanismos típicos de deterioro en clarificación y descarga de un espesador.  
+Objetivo: habilitar modelado **predictivo** (riesgo de evento) y, a futuro, **prescriptivo** (acción sugerida).
 
-## Propósito
-1) Generar variabilidad realista (no ruido aleatorio).
-2) Crear **patrones distintos** por campaña para:
-   - entrenar detección temprana (predictivo)
-   - evaluar robustez ante diferentes “modos de falla” del proceso
-   - habilitar análisis prescriptivo (qué acción conviene)
-
-## Definiciones rápidas
-- **CLAY**: incremento de finos/arcillas → peor clarificación, más turbidez, suele requerir ajuste de floc y/o estrategia operativa.
-- **UF**: degradación de capacidad/eficiencia de underflow (restricción mecánica/proceso) → sube bed/torque, empeora overflow.
-- **FLOC (opcional)**: subdosificación de floculante → turbidez aumenta; respuesta típica es aumentar dosis.
+## Cómo se implementan en el simulador
+- `Regime` programa períodos consecutivos:
+  - `NORMAL` → `CLAY` → `UF` → `FLOC`
+- El evento (`event_now`) se etiqueta desde `Overflow_Turb_NTU_clean` con condición sostenida:
+  - CLEAN > `event_limit_NTU` (70) por `sustain_points` (4 puntos = 20 min)
+- `event_type` se asigna cuando hay evento, según el **driver dominante**:
+  - argmax entre contribuciones normalizadas de finos (CLAY), restricción UF (UF), déficit floc (FLOC)
 
 ---
 
-## Tabla de impacto (dirección esperada por campaña)
+## Resumen ejecutivo: firma e intervención
 
-Leyenda:
-- ↑ aumenta
-- ↓ disminuye
-- ↔ neutro/variable
-- (sec.) efecto secundario frecuente
+### CLAY — Ataque de finos/arcillas
+**Qué representa:** incremento de finos coloidales (arcillas) que sobrepasa el mecanismo de sedimentación.  
+**Implementación:** `PSD_fines_idx` tiende a valores altos en CLAY; esto sube el estrés y la turbidez.
 
-| Variable / Señal | CLAY | UF | FLOC |
+- **Firma esperada (tags):**
+  - `Overflow_Turb_*` ↑↑ (overflow “lechoso”)
+  - `PSD_fines_idx` ↑↑
+  - `BedLevel_m` puede ↓ inicialmente y luego ↑ si se acumula
+  - `RakeTorque_pct` ↔/↑ (secundario)
+- **Acción típica:**
+  - ajustar `Floc_gpt` (cauteloso) + considerar dilución/menor carga (conceptual)
+
+### UF — Degradación de capacidad de underflow
+**Qué representa:** cuello de botella en descarga (bomba/válvula/reología), inventario se acumula.  
+**Implementación:** `UF_capacity_factor` cae por segmentos durante UF → limita `Qu_m3h` y eleva bed/torque.
+
+- **Firma esperada (tags):**
+  - `BedLevel_m` ↑↑
+  - `RakeTorque_pct` ↑↑
+  - `UF_capacity_factor` ↓ y/o `Qu_m3h` restringido
+  - `Solids_u_pct` tiende a bajar (descarga más “diluida” o inestable)
+- **Acción típica:**
+  - aliviar descarga (conceptual): aumentar capacidad/flujo, dilución UF, reducir feed temporalmente
+
+### FLOC — Subdosificación de floculante
+**Qué representa:** déficit de floc (bomba/preparación/dosis) → flóculos débiles y mala clarificación.  
+**Implementación:** durante `Regime=FLOC`, `Floc_gpt` se reduce multiplicando por 0.55–0.75, elevando `floc_deficit` y turbidez.
+
+- **Firma esperada (tags):**
+  - `Overflow_Turb_*` ↑↑
+  - `Floc_gpt` ↓ (relativo a necesidad)
+  - `BedLevel_m` ↔ / baja-estable
+  - `RakeTorque_pct` ↔ (sin firma mecánica fuerte)
+- **Acción típica:**
+  - subir `Floc_gpt` (más directo que en CLAY) y verificar preparación/calibración (conceptual)
+
+---
+
+## Tabla de impacto en variables clave (dirección)
+Leyenda: ↑ aumenta, ↓ disminuye, ↔ neutro/variable
+
+| Variable | CLAY | UF | FLOC |
 |---|---:|---:|---:|
+| `PSD_fines_idx` | ↑↑ | ↔ | ↔ |
+| `UF_capacity_factor` | ↔ | ↓↓ | ↔ |
+| `Qu_m3h` | ↔ | ↓ / restringido | ↔ |
+| `BedLevel_m` | ↓ luego ↑ | ↑↑ | ↔ / ↓ |
+| `RakeTorque_pct` | ↔ / ↑ | ↑↑ | ↔ |
+| `Floc_gpt` | ↑ (acción) | ↔ | ↓↓ (causa) |
 | `Overflow_Turb_NTU_clean` | ↑↑ | ↑ | ↑↑ |
-| `Overflow_Turb_NTU` (medida) | ↑↑ (+ fallas posibles) | ↑ (+ fallas posibles) | ↑↑ (+ fallas posibles) |
-| `PSD_fines_index` | ↑↑ (driver) | ↔ | ↔ |
-| `Floc_dose` | ↑ (acción esperada) | ↔ / ↑ (sec.) | ↑↑ (acción directa) |
-| `UF_m3h` | ↔ / ↑ (acción compensatoria) | ↓ (capacidad efectiva) / ↑ (acción) | ↔ |
-| `Bed_level` | ↑ (sec.) | ↑↑ (driver) | ↑ (sec.) |
-| `Rake_torque` | ↑ (sec.) | ↑↑ (driver) | ↑ (sec.) |
-| `ControlMode` MANUAL | ↑ probabilidad | ↑ probabilidad | ↑ probabilidad |
-
-> Ajusta la tabla si tus nombres/variables difieren. La idea es documentar “mecanismo → señales → acción”.
+| `Overflow_Turb_NTU` | ↑↑ (+ fallas) | ↑ (+ fallas) | ↑↑ (+ fallas) |
 
 ---
 
 ## Objetivos de modelado por campaña
 
-### Objetivo común (todas)
-- **Predictivo**: estimar `P(evento en 30 min)` (`target_event_30m`)
-- Restricciones:
-  - validación temporal
-  - métricas operacionales (false alarms/día, lead time)
+### Objetivo global (binario)
+Predecir `target_event_30m` (evento en 30 min) con split temporal estricto.
 
-### CLAY — Objetivo específico
-- Detectar deterioro causado por aumento de finos antes de cruzar 70 NTU sostenido.
-- Señales esperadas:
-  - subida de `PSD_fines_index`
-  - aumento gradual en turbidez clean
-  - respuesta vía `Floc_dose` y/o ajustes operacionales
-- Evaluación recomendada:
-  - recall para eventos CLAY
-  - lead time promedio en CLAY
-  - sensibilidad a cambios de finos (robustez)
+### Objetivo adicional (explicabilidad para operación)
+- Importancias/SHAP para “traducir” el riesgo a drivers:
+  - finos (`PSD_fines_idx`), descarga (`UF_capacity_factor`, `BedLevel_m`, `RakeTorque_pct`), déficit de floc (`Floc_gpt`)
 
-### UF — Objetivo específico
-- Anticipar eventos ligados a limitación de underflow (capacidad/estabilidad).
-- Señales esperadas:
-  - incremento de `Bed_level` y `Rake_torque`
-  - degradación dinámica (más “inercial”)
-  - acciones: aumentar UF (si posible) o cambios de estrategia
-- Evaluación recomendada:
-  - recall para eventos UF
-  - tasa de falsas alarmas cuando torque/bed suben pero no hay evento
-  - interpretación: drivers mecánicos/proceso
-
-### FLOC (opcional) — Objetivo específico
-- Detectar subdosificación vs ruido instrumental.
-- Señales esperadas:
-  - caída o insuficiencia en `Floc_dose`
-  - aumento rápido en turbidez clean
-- Evaluación recomendada:
-  - precisión en detección (evitar alarmas por spikes de sensor)
-  - robustez ante fallas tipo `spike`
-
----
-
-## Prescriptivo (extensión futura)
-Una vez entrenado el modelo predictivo:
-- reglas simples o recomendador:
-  - si riesgo alto + patrón CLAY → sugerir aumentar floc (o revisar feed fines)
-  - si riesgo alto + patrón UF → sugerir revisar UF/bed/torque y acción sobre UF
-- métrica: reducción esperada de tiempo en evento (simulado) vs falsas alarmas
+### Objetivo avanzado (multi-tarea)
+- **Clasificar `event_type`** durante evento (CLAY/UF/FLOC) para habilitar recomendación de acción.
