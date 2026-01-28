@@ -1,0 +1,4 @@
+numpy
+pandas
+pyarrow
+dataclasses; python_version < '3.7'
