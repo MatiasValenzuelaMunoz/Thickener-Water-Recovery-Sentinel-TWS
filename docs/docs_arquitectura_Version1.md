@@ -1,18 +1,18 @@
 # Arquitectura (alto nivel)
 
 ## Flujo
-1. `src/simulate_fixed.py`
-   - simula proceso + campañas + control + turbidez CLEAN
-   - calibra escala para lograr prevalencia de eventos sobre warning
-   - genera `event_now` y `target_event_30m`
-   - inyecta fallas y produce turbidez MEDIDA
+1) `simulate_fixed.py`
+- Simula proceso + campañas + modo de control
+- Genera turbidez CLEAN
+- Calibra parámetros para alcanzar prevalencia objetivo de eventos
+- Inyecta fallas y produce turbidez MEDIDA
+- Exporta dataset en parquet
 
-2. `src/quick_checks.py`
-   - valida KPIs de distribución
-   - reporta warning vs spec
-   - reporta clean vs measured
+2) `quick_checks.py`
+- Reporta KPIs de distribución y calidad
+- Diferencia warning vs spec
+- Diferencia CLEAN vs MEDIDA
 
-## Decisión clave
-Separar:
-- **ground truth del proceso** (CLEAN) para labels
-- **medición con fallas** (MEDIDA) para features
+## Contrato de datos (conceptual)
+- Labels: basados en CLEAN y `event_limit_NTU`
+- Features: principalmente MEDIDA y variables de proceso/control
