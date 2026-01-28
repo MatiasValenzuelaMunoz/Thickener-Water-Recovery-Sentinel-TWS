@@ -1,55 +1,76 @@
-# Campaign Spec — Campañas sintéticas (CLAY / UF / FLOC)
+# Campañas sintéticas — CLAY / UF / FLOC (y acciones operacionales)
 
-Este simulador incluye campañas que representan mecanismos típicos de deterioro en clarificación y descarga de un espesador.
-Objetivo: habilitar modelado **predictivo** (riesgo de evento) y, a futuro, **prescriptivo** (acción sugerida).
+Este documento define las campañas (mecanismos causales sintéticos) y cómo se reflejan en variables del dataset.
+Enfocado en uso operacional: **firma → diagnóstico → acción**.
 
-## Variables clave agregadas (acción explícita)
-La dilución de alimentación se modela explícitamente como **más agua al feed** (no “menos sólidos”):
+## Cómo se usan las campañas en el simulador
+- `Regime` programa períodos consecutivos: `NORMAL` → `CLAY` → `UF` → `FLOC`.
+- `event_now` se etiqueta desde `Overflow_Turb_NTU_clean`:
+  - CLEAN > `event_limit_NTU` (70) sostenido `sustain_points=4` (20 min).
+- `event_type` se asigna durante evento según driver dominante (fines / UF / floc).
+
+## Acción explícita: dilución de alimentación (feed dilution)
+La dilución se modela como **más agua al feed**:
 - `Qf_total_m3h = Qf_pulp_m3h + Qf_dilution_m3h`
-- `Solids_f_pct` baja por mezcla manteniendo la masa de sólidos del stream de pulpa (proxy)
-- `Qf_m3h` es alias SCADA de `Qf_total_m3h` (y es el tag que se corrompe con fallas)
+- `Solids_f_pct` baja por mezcla (proxy)
+- `Qf_m3h` es alias SCADA de `Qf_total_m3h`
 
-Tags asociados:
-- `FeedDilution_On` (0/1)
-- `FeedDilution_factor` (objetivo de reducción de %sol)
-- `Qf_dilution_m3h` (agua agregada)
+Esto permite evaluar prescriptivo simple: “activar dilución” y observar su efecto en riesgo de evento.
 
 ---
 
-## Cómo se implementan en el simulador
-- `Regime` programa períodos consecutivos: `NORMAL` → `CLAY` → `UF` → `FLOC`
-- Etiquetado:
-  - `event_now` se define con `Overflow_Turb_NTU_clean > event_limit_NTU` (70) sostenido (`sustain_points` = 4 → 20 min)
-  - `target_event_30m` es `event_now` desplazado 30 min
-- `event_type` durante evento se asigna por driver dominante (fines/UF/floc).
+## Escenario 1 — CLAY (Ataque de finos/arcillas)
+
+### Firma esperada (síntomas)
+- `Overflow_Turb_NTU_clean` ↑↑ (overflow “lechoso”)
+- `PSD_fines_idx` ↑↑ (driver)
+- `BedLevel_m` variable (puede bajar al inicio y luego subir si se acumula)
+- `RakeTorque_pct` ↔/↑ (secundario)
+
+### Acción inmediata (modo “bombero”)
+- Activar dilución de alimentación:
+  - `FeedDilution_On=1`
+  - `Qf_dilution_m3h > 0`
+  - `Qf_total_m3h` ↑
+  - `Solids_f_pct` ↓
+
+### Objetivos de modelado (CLAY)
+- Predecir `target_event_30m`.
+- Explicar drivers (sensibilidad a `PSD_fines_idx`, carga efectiva, etc.).
+- Evaluar impacto de dilución sobre riesgo (prescriptivo).
 
 ---
 
-## Resumen por campaña (firma + acción)
+## Escenario 2 — UF (Degradación de capacidad del underflow)
 
-### CLAY — Ataque de finos/arcillas
-**Drivers:** `PSD_fines_idx` alto.  
-**Firma:** turbidez ↑↑, finos ↑↑, cama variable; puede aumentar MANUAL.  
+### Firma esperada (síntomas)
+- `UF_capacity_factor` ↓ (restricción)
+- `BedLevel_m` ↑↑
+- `RakeTorque_pct` ↑↑
+- `Qu_m3h` restringido (no evacua inventario)
+- `Solids_u_pct` tiende a ↓/inestable (proxy)
 
-**Acción inmediata representada en datos (dilución de alimentación):**
-- `FeedDilution_On = 1`
-- `Qf_dilution_m3h > 0`
-- `Qf_total_m3h` ↑
-- `Solids_f_pct` ↓
+### Acción inmediata (modo “bombero”, conceptual)
+- Aumentar capacidad de descarga / aliviar UF (p.ej. dilución UF, aumento de bombeo, reducción temporal de feed).
 
-**Objetivo de modelado (CLAY):**
-- anticipar evento y explicar sensibilidad a finos
-- evaluar si la dilución reduce riesgo (base del componente prescriptivo)
+### Objetivos de modelado (UF)
+- Anticipar eventos UF y minimizar falsas alarmas por subidas transitorias de torque/bed.
 
-### UF — Restricción en descarga (capacidad UF)
-**Driver:** `UF_capacity_factor` bajo (segmentos).  
-**Firma:** `BedLevel_m ↑` + `RakeTorque_pct ↑` + `Solids_u_pct` tiende a ↓/inestable, turbidez ↑.  
-**Objetivo:** anticipar eventos UF y reducir falsas alarmas cuando sube torque/bed sin evento.
+---
 
-### FLOC — Subdosificación de floculante
-**Driver:** `Floc_gpt` reducido en `Regime=FLOC`.  
-**Firma:** turbidez ↑↑ con cama baja/estable y sin firma mecánica fuerte.  
-**Objetivo:** distinguir déficit de floc vs ruido instrumental.
+## Escenario 3 — FLOC (Subdosificación de floculante)
+
+### Firma esperada (síntomas)
+- `Floc_gpt` bajo vs necesidad
+- `Overflow_Turb_*` ↑↑
+- `BedLevel_m` baja/estable
+- `RakeTorque_pct` ↔ (sin firma mecánica fuerte)
+
+### Acción inmediata (modo “bombero”, conceptual)
+- Aumentar `Floc_gpt` y verificar preparación/calibración.
+
+### Objetivos de modelado (FLOC)
+- Distinguir déficit real de floc vs ruido instrumental en turbidez medida.
 
 ---
 
@@ -58,13 +79,13 @@ Leyenda: ↑ aumenta, ↓ disminuye, ↔ neutro/variable
 
 | Variable | CLAY | UF | FLOC |
 |---|---:|---:|---:|
-| `PSD_fines_idx` | ↑↑ | ↔ | ↔ |
+| `PSD_fines_idx` | ↑�� | ↔ | ↔ |
 | `UF_capacity_factor` | ↔ | ↓↓ | ↔ |
-| `BedLevel_m` | ↔ / variable | ↑↑ | ↔ / ↓ |
-| `RakeTorque_pct` | ↔ / ↑ | ↑↑ | ↔ |
+| `BedLevel_m` | ↔/variable | ↑↑ | ↔/↓ |
+| `RakeTorque_pct` | ↔/↑ | ↑↑ | ↔ |
 | `Floc_gpt` | ↑ (acción cautelosa) | ↔ | ↓↓ (causa) |
 | `FeedDilution_On` | ↑ (acción) | ↔ | ↔ |
-| `Qf_total_m3h` | ↑ (por dilución) | ↔ | ↔ |
-| `Solids_f_pct` | ↓ (por dilución) | ↔ | ↔ |
+| `Qf_total_m3h` | ↑ (dilución) | ↔ | ↔ |
+| `Solids_f_pct` | ↓ (dilución) | ↔ | ↔ |
 | `Overflow_Turb_NTU_clean` | ↑↑ | ↑ | ↑↑ |
 | `Overflow_Turb_NTU` | ↑↑ (+ fallas) | ↑ (+ fallas) | ↑↑ (+ fallas) |
