@@ -25,6 +25,16 @@ Esto permite entrenar modelos robustos **sin contaminar el etiquetado** por drif
 - `UF`: degradación de capacidad de underflow (restricción de descarga)
 - `FLOC`: subdosificación/problemas de preparación de floculante
 
+## Acción operacional modelada explícitamente (prescriptivo)
+El dataset incluye una acción “bombero” realista: **dilución de alimentación** para ganar tiempo ante mala clarificación.
+Se refleja en:
+- `FeedDilution_On` (0/1)
+- `Qf_dilution_m3h` (agua añadida)
+- `Qf_total_m3h` (caudal total al espesador)
+- `Solids_f_pct` (baja por mezcla)
+
+> Nota: `Qf_m3h` se mantiene como alias compatible y representa el caudal total (`Qf_total_m3h`).
+
 ## Salidas esperadas del proyecto (portafolio)
 1) Modelo baseline con validación temporal (PR-AUC, falsas alarmas/día).
 2) Explicabilidad operacional (drivers coherentes con proceso).
