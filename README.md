@@ -1,45 +1,45 @@
 # Thickener Water Recovery Sentinel (TWS)
 
-Proyecto personal (portfolio) orientado a **monitoreo y predicción de deterioro de clarificación** en un espesador, usando un **dataset sintético realista** (sin datos sensibles) y un pipeline reproducible.
+Proyecto personal de portafolio para **detección temprana de deterioro de clarificación** en un espesador, usando un **dataset sintético reproducible** (sin datos sensibles) que incorpora campañas operacionales, modo manual y fallas de instrumentación.
 
 ## Problema
-En espesadores, aumentos sostenidos de **turbidez de overflow** reducen recuperación de agua y afectan estabilidad operacional.
+Aumentos sostenidos de **turbidez de overflow** reducen recuperación de agua y afectan estabilidad operacional.  
+Objetivo: habilitar un entorno end-to-end para **anticipar eventos** y comparar estrategias de modelado/evaluación.
 
-- **Spec (referencia):** 80 NTU  
-- **Warning (evento para ML):** 70 NTU sostenido  
-- **Objetivo ML:** anticipar un evento con **horizonte 30 min** (clasificación binaria).
+## Idea clave (diferenciador)
+Separación explícita entre:
+- `Overflow_Turb_NTU_clean`: “ground truth” del proceso (sin fallas), usada para **labels**
+- `Overflow_Turb_NTU`: medición con fallas (missing/stuck/spikes/drift), usada para **features**
 
-## Qué incluye este repo
-- Generación de dataset sintético multivariable con:
-  - campañas (CLAY / UF / FLOC),
-  - modos de control (AUTO / MANUAL),
-  - acciones de operador (OperatorAction),
-  - fallas de instrumentación (missing/stuck/spikes/drift),
-  - turbidez **CLEAN** (proceso) vs turbidez **MEDIDA** (sensor).
-- Script de validación rápida (sanity checks).
-- Bitácora técnica (decisiones y calibración del dataset).
-- Espacio para notebooks de EDA, features y modelado.
+Esto permite entrenar y evaluar modelos robustos con sensores imperfectos sin contaminar el etiquetado.
 
-## Dataset y etiquetas
-Columnas clave:
-- `Overflow_Turb_NTU_clean`: “ground truth” del proceso (sin fallas).
-- `Overflow_Turb_NTU`: medición con fallas (lo que vería el sistema).
-- `event_now`: evento sostenido basado en `Overflow_Turb_NTU_clean > event_limit_NTU` (70 NTU).
-- `target_event_30m`: etiqueta a 30 minutos (shift de `event_now`).
+## Umbrales
+- `event_limit_NTU = 70` → **warning** (base de labels y calibración)
+- `spec_limit_NTU = 80` → **spec** (KPI operacional/reporting)
 
-## Cómo ejecutar
-### 1) Generar dataset sintético
-```bash
-python src/simulate_fixed.py
-```
+## Qué incluye
+- Simulador de series temporales multivariables (≈90 días @ 5 min).
+- Campañas / causas sintéticas (ej. **CLAY**, **UF**, opcional **FLOC**).
+- Control **AUTO vs MANUAL** y acciones de operador.
+- Etiquetas:
+  - `event_now`: evento sostenido sobre `event_limit_NTU` en CLEAN
+  - `target_event_30m`: evento a 30 minutos
 
-### 2) Validar distribución y KPIs
-```bash
-python src/quick_checks.py
-```
+## KPIs logrados (dataset típico)
+- Prevalencia de eventos (label, CLEAN @70): ~5%
+- Fracción modo MANUAL: ~26%
+- Turbidez CLEAN: P95 ~89 NTU / P99 ~139 NTU
 
-## Bitácora
-Ver carpeta [`bitacora/`](bitacora/) para decisiones de diseño, iteraciones y resultados.
+## Estructura del repo
+- `src/`: simulación + validación rápida
+- `bitacora/`: decisiones y evolución del proyecto (narrativa)
+- `docs/`: arquitectura y decisiones técnicas
+- `notebooks/`: EDA, features, modelos (por completar)
+- `outputs/`: figuras y métricas (no versionar artefactos pesados)
 
-## Notas
-Este repo usa **datos sintéticos** para evitar exposición de información sensible.
+## Roadmap corto
+1) Baseline model + evaluación temporal (PR-AUC, Recall@Precision).
+2) Features temporales (lags/rolling) sin leakage.
+3) Métrica de “lead time” y trade-off falsas alarmas vs misses.
+4) Monitoreo de salud de sensores (clasificación de fallas).
+
