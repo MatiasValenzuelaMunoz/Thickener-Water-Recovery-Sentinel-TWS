@@ -1,99 +1,93 @@
-﻿# Diccionario de Datos - Espesador de Relaves
-## Versión 1.0 (Contrato Estable)
+# Diccionario de datos — Thickener Water Recovery Sentinel (TWS)
+
+Este proyecto usa un **dataset sintético** de series temporales para simular operación de un espesador y eventos de turbidez alta.
+
+## Convenciones generales
+- Frecuencia típica: **5 min**
+- Dos señales de turbidez:
+  - `Overflow_Turb_NTU_clean`: estado del proceso (ground truth, sin fallas)
+  - `Overflow_Turb_NTU`: medición del sensor con fallas (spikes/drift/missing/stuck)
+- Umbrales:
+  - `event_limit_NTU = 70` (warning, para labels)
+  - `spec_limit_NTU = 80` (spec, KPI)
+- Labels:
+  - `event_now`: evento sostenido (CLEAN > 70)
+  - `target_event_30m`: evento a 30 min
+
+> Nota: Los nombres de columnas pueden evolucionar. Si cambias un nombre en `src/`, actualiza este documento.
 
 ---
 
-## 📊 ESPECIFICACIONES DEL DATASET
+## Esquema (alto nivel)
 
-| Parámetro | Valor | Notas |
-|-----------|-------|-------|
-| **Nombre archivo** | `thickener_timeseries.parquet` | |
-| **Formato alternativo** | `thickener_timeseries.csv` | Para verificación |
-| **Frecuencia** | 5 minutos | |
-| **Duración** | 90 días | 1 Ene 2026 - 31 Mar 2026 |
-| **Total registros** | 25,920 | (90 días × 288 puntos/día) |
-| **Prevalencia objetivo eventos** | ~5% | Ajustable automáticamente |
-| **Límite especificación** | 80 NTU | `spec_limit_NTU` |
+### A) Índices y tiempo
+| Columna | Tipo | Unidad | Ejemplo | Descripción |
+|---|---:|---|---|---|
+| `timestamp` | datetime | - | `2026-01-01 00:00:00` | Marca temporal de cada observación. |
 
 ---
 
-## 🕐 COLUMNAS - TIEMPO
+### B) Variables de proceso (operacionales)
+| Columna | Tipo | Unidad | Descripción |
+|---|---:|---|---|
+| `Qf_m3h` | float | m³/h | Caudal de alimentación (feed). Puede contener faltantes. |
+| `Solids_Load` | float | t/h (o adim.) | Carga de sólidos (puede derivarse de caudal y %sol). |
+| `PSD_fines_index` | float | adim. [0–1] | Índice de finos (proxy de variabilidad mineralógica). |
+| `UF_m3h` | float | m³/h | Caudal de underflow. Variable manipulada/objetivo de acciones. |
+| `UF_density` | float | % o adim. | Densidad underflow (proxy de capacidad/operación). |
+| `Floc_dose` | float | g/t o adim. | Dosificación de floculante. Variable manipulada. |
+| `Rake_torque` | float | % o adim. | Torque / esfuerzo mecánico (proxy de bed / carga). |
+| `Bed_level` | float | m o adim. | Nivel de cama (bed). Proxy de inventario/estabilidad. |
 
-| Columna | Tipo | Descripción | Ejemplo |
-|---------|------|-------------|---------|
-| `timestamp` | datetime | Marca de tiempo | 2026-01-01 00:00:00 |
-
----
-
-## ⚙️ COLUMNAS - PROCESO (SIMULADO)
-
-| Columna | Unidad | Rango Normal | Descripción |
-|---------|--------|--------------|-------------|
-| `Qf_m3h` | m³/h | 250-900 | Caudal de alimentación |
-| `Solids_f_pct` | % | 8-22 | Porcentaje de sólidos en alimentación |
-| `PSD_fines_idx` | 0-1 | 0.05-0.85 | Índice de finos/arcillas (0=bajo, 1=alto) |
-| `Floc_gpt` | g/t | 5-40 | Dosificación de floculante |
-| `UF_capacity_factor` | adim | 0.7-1.0 | Factor de capacidad del underflow |
-| `Qu_m3h` | m³/h | 80-450 | Caudal underflow |
-| `Solids_u_pct` | % | 45-68 | Porcentaje de sólidos en underflow |
-| `BedLevel_m` | m | 0.5-3.5 | Nivel de cama del espesador |
-| `RakeTorque_pct` | % | 10-95 | Torque del mecanismo de rastrillo |
-| `Overflow_Turb_NTU` | NTU | 5-250 | Turbiedad del overflow |
+> Ajusta unidades según tu simulador (en portafolio basta consistencia interna).
 
 ---
 
-## 🎮 COLUMNA - MODO OPERACIÓN
-
-| Columna | Valores | Descripción |
-|---------|---------|-------------|
-| `ControlMode` | AUTO / MANUAL | Modo de control operacional |
-
----
-
-## 📏 COLUMNA - ESPECIFICACIÓN
-
-| Columna | Valor | Descripción |
-|---------|-------|-------------|
-| `spec_limit_NTU` | 80 NTU | Límite de especificación para turbiedad |
-
----
-
-## 🏷️ COLUMNAS - ETIQUETAS
-
+### C) Calidad del dato / Instrumentación
 | Columna | Tipo | Descripción |
-|---------|------|-------------|
-| `event_now` | 0/1 | Evento actual (turbiedad > 80 NTU por ≥ 15 min) |
-| `target_event_30m` | 0/1 | Evento a predecir (30 minutos adelante) |
-| `event_type` | NONE/CLAY/UF/FLOC | Tipo de evento (solo diagnóstico) |
+|---|---:|---|
+| `sensor_fault` | bool/int | Bandera general de falla de medición (si existe). |
+| `fault_type` | category | Tipo de falla: `missing`, `stuck`, `spike`, `drift` (si existe). |
+
+Si tu simulador no exporta estas banderas, puedes:
+- mantenerlas como “internas” del simulador, o
+- agregarlas para análisis de robustez (recomendado para hito “Sensor health”).
 
 ---
 
-## 🔧 FALLAS INSTRUMENTALES SIMULADAS
-
-| Tipo de falla | Tasa | Afecta a | Descripción |
-|---------------|------|----------|-------------|
-| **Valores faltantes** | 1% por tag | Qf_m3h, Solids_u_pct, Overflow_Turb_NTU | Datos ausentes aleatorios |
-| **Spikes** | 2 por día por tag | Qf_m3h, Solids_u_pct, Overflow_Turb_NTU | Valores extremos puntuales |
-| **Sensor pegado** | 2 cada 30 días por tag | Qf_m3h, Solids_u_pct, Overflow_Turb_NTU | Valor constante por 2-6 horas |
-| **Drift** | 1 cada 90 días por tag | Qf_m3h, Solids_u_pct, Overflow_Turb_NTU | Deriva lenta del sensor |
+### D) Turbidez (variable principal)
+| Columna | Tipo | Unidad | Descripción |
+|---|---:|---:|---|
+| `Overflow_Turb_NTU_clean` | float | NTU | Turbidez de overflow “ideal” del proceso (sin fallas). Usada para etiquetar. |
+| `Overflow_Turb_NTU` | float | NTU | Turbidez medida con fallas de instrumentación (lo que vería operación/SCADA). |
 
 ---
 
-## 📈 RANGOS DE TURBIEDAD ESPERADOS
-
-| Estadístico | Valor NTU | Interpretación |
-|-------------|-----------|----------------|
-| **Mediana** | 20-40 | Operación normal |
-| **P90** | 40-60 | Atención |
-| **P95** | 70-90 | Cerca del límite |
-| **P99** | 100-150 | Eventos severos |
-| **Máximo** | 180-250 | Crisis operacional |
+### E) Control y contexto operacional
+| Columna | Tipo | Descripción |
+|---|---:|---|
+| `ControlMode` | category | `AUTO` / `MANUAL`. |
+| `OperatorAction` | category | Acción aplicada (p.ej. `INCREASE_UF`, `DECREASE_UF`, `INCREASE_FLOC`, `DECREASE_FLOC`, `NONE`). |
 
 ---
 
-## 🔗 ARCHIVOS RELACIONADOS
+### F) Campañas / eventos (causas sintéticas)
+| Columna | Tipo | Descripción |
+|---|---:|---|
+| `campaign_type` | category | `CLAY`, `UF` (y opcional `FLOC`). Representa la “causa dominante” en el período. |
+| `campaign_active` | bool/int | 1 si hay campaña activa. (si existe) |
 
-- `src/simulate.py` - Generador del dataset
-- `src/quick_checks.py` - Validaciones rápidas
-- `docs/event_definition.md` - Lógica de eventos
-- `docs/campaign_specs.md` - Especificación de campañas
+---
+
+### G) Targets (ML)
+| Columna | Tipo | Definición |
+|---|---:|---|
+| `event_now` | int (0/1) | 1 si existe evento sostenido con `Overflow_Turb_NTU_clean > event_limit_NTU`. |
+| `target_event_30m` | int (0/1) | 1 si se observa `event_now` en +30 min (shift temporal). |
+
+---
+
+## Notas de uso (para modelado)
+- **Features**: usar `Overflow_Turb_NTU` + variables de proceso/control; evitar usar CLEAN como feature.
+- **Validación**: split temporal (walk-forward o train/val/test por bloques) para evitar leakage.
+- **Métricas recomendadas**: PR-AUC, Recall@Precision y “false alarms/día”.
