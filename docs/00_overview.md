@@ -25,6 +25,43 @@ Esto permite entrenar modelos robustos **sin contaminar el etiquetado** por drif
 - `UF`: degradación de capacidad de underflow (restricción de descarga)
 - `FLOC`: subdosificación/problemas de preparación de floculante
 
+## Escenario del dataset (contexto operacional)
+Este dataset representa la operación de **un espesador de relaves** en una planta concentradora, con variabilidad de mineral, restricciones de descarga y acciones de operador.
+
+### Temporalidad y resolución
+- Ventana simulada: **90 días continuos**
+- Frecuencia de muestreo: **cada 5 minutos**
+- Total típico: **25,920 registros**
+- Horizonte de predicción objetivo: **30 min** (`target_event_30m`)
+- Definición de evento: turbidez CLEAN > 70 NTU sostenido **20 min** (`sustain_points=4`)
+
+### Dimensiones “operacionales” (caudales)
+- **Caudal total a espesador** (tag SCADA): `Qf_m3h` (m³/h)  
+  - En este proyecto, `Qf_m3h` es alias de `Qf_total_m3h` (caudal total real al espesador).
+- Descomposición del caudal:
+  - `Qf_pulp_m3h`: caudal de pulpa base (sin agua añadida)
+  - `Qf_dilution_m3h`: agua de dilución (acción operacional)
+  - `Qf_total_m3h = Qf_pulp_m3h + Qf_dilution_m3h`
+
+> Interpretación: cuando `FeedDilution_On=1`, el operador agrega agua, sube `Qf_total_m3h` y baja `Solids_f_pct` por mezcla.
+
+### Rangos típicos (del dataset actual)
+- `Qf_total_m3h`:
+  - media: **579.42 m³/h**
+  - P50: **569.61 m³/h**
+  - P95: **776.36 m³/h**
+- `Qf_pulp_m3h`: ~250–900 m³/h (simulado, antes de dilución)
+- `Solids_f_pct`: ~6–22% (proxy)
+- `Overflow_Turb_NTU_clean`: 5–160 NTU (cap)
+- Modo MANUAL: objetivo 15–30% del tiempo
+
+### Qué significa “realista” aquí
+No busca replicar una planta específica, sino capturar **patrones operacionales plausibles**:
+- campañas causales (CLAY/UF/FLOC),
+- retardos (lags) implícitos en el proceso,
+- fallas instrumentales localizadas (missing/stuck/spikes/drift),
+- acción prescriptiva explícita (dilución de feed).
+
 ## Acción operacional modelada explícitamente (prescriptivo)
 El dataset incluye una acción “bombero” realista: **dilución de alimentación** para ganar tiempo ante mala clarificación.
 Se refleja en:
