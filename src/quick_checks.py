@@ -3,6 +3,7 @@ Quick sanity checks for the synthetic dataset.
 - validates latest thickener_timeseries_deadband*_sp*.parquet if present
 - reports BOTH clean and measured turbidity stats
 - reports points above event_limit_NTU (warning) and spec_limit_NTU (spec)
+- reports "zona verde / alerta / crítico" share based on metallurgist ranges
 
 Run:
   python src/quick_checks.py
@@ -35,6 +36,10 @@ def turb_stats(series: pd.Series) -> dict:
     }
 
 
+def in_range(s: pd.Series, lo: float, hi: float) -> pd.Series:
+    return (s >= lo) & (s <= hi)
+
+
 def main():
     print("=" * 60)
     print("VALIDACIÓN RÁPIDA DEL DATASET - ESPESADOR")
@@ -56,8 +61,8 @@ def main():
     manual_rate = float((df["ControlMode"] == "MANUAL").mean())
 
     # thresholds (prefer columns; fallback to defaults)
-    spec_limit = float(df["spec_limit_NTU"].iloc[0]) if "spec_limit_NTU" in df.columns else 80.0
-    event_limit = float(df["event_limit_NTU"].iloc[0]) if "event_limit_NTU" in df.columns else 70.0
+    spec_limit = float(df["spec_limit_NTU"].iloc[0]) if "spec_limit_NTU" in df.columns else 200.0
+    event_limit = float(df["event_limit_NTU"].iloc[0]) if "event_limit_NTU" in df.columns else 100.0
 
     print(f"\n🎯 1. PREVALENCIA DE EVENTOS (label sobre CLEAN @ {event_limit:.0f} NTU): {event_rate:.2%}")
     print(f"🎮 2. FRACCIÓN MODO MANUAL: {manual_rate:.2%}")
@@ -65,6 +70,7 @@ def main():
     clean_col = "Overflow_Turb_NTU_clean"
     meas_col = "Overflow_Turb_NTU"
 
+    # --- turbidity stats
     if clean_col in df.columns:
         st = turb_stats(df[clean_col])
         print(f"\n📈 3A. TURBIEDAD CLEAN (proceso):")
@@ -111,14 +117,61 @@ def main():
     print(f"\n🔧 6. CALIDAD DE DATOS:")
     print(f"   • Valores faltantes en Qf_m3h: {missing_qf:.2%}")
 
-    print(f"\n✅ 7. RESUMEN (usando CLEAN para rangos esperados):")
+    # --- NEW: operational green/alert/critical shares (metallurgist-aligned)
+    # Define "green bands" (zona verde) based on metallurgist dashboard summary.
+    # Evaluate on CLEAN turbidity (process truth) and on process tags (not corrupted ones).
+    turb_green = in_range(df[clean_col], 20, 50) if clean_col in df.columns else pd.Series(False, index=df.index)
+    uf_green = in_range(df["Solids_u_pct"], 62, 68) if "Solids_u_pct" in df.columns else pd.Series(False, index=df.index)
+    bed_green = in_range(df["BedLevel_m"], 1.5, 2.5) if "BedLevel_m" in df.columns else pd.Series(False, index=df.index)
+    tq_green = in_range(df["RakeTorque_pct"], 30, 50) if "RakeTorque_pct" in df.columns else pd.Series(False, index=df.index)
+
+    green_all = turb_green & uf_green & bed_green & tq_green
+    out_of_green = ~green_all
+
+    # "critical" if any variable is in critical band
+    turb_critical = (df[clean_col] > 100) if clean_col in df.columns else pd.Series(False, index=df.index)
+    uf_critical = (df["Solids_u_pct"] < 58) | (df["Solids_u_pct"] > 72) if "Solids_u_pct" in df.columns else pd.Series(False, index=df.index)
+    bed_critical = (df["BedLevel_m"] < 1.0) | (df["BedLevel_m"] > 3.0) if "BedLevel_m" in df.columns else pd.Series(False, index=df.index)
+    tq_critical = (df["RakeTorque_pct"] > 70) if "RakeTorque_pct" in df.columns else pd.Series(False, index=df.index)
+
+    critical_any = turb_critical | uf_critical | bed_critical | tq_critical
+
+    # --- NEW: operational green/alert/critical shares (metallurgist-aligned)
+    # Primary KPI: clarification (turbidity) using CLEAN truth.
+    # Rationale: the metallurgist's "85% normal / 15% events" maps better to
+    # time in green vs non-green turbidity bands than to "all tags simultaneously OK".
     if clean_col in df.columns:
-        p95_clean = float(np.percentile(df[clean_col].dropna(), 95))
-        p99_clean = float(np.percentile(df[clean_col].dropna(), 99))
-        print("   • Eventos:       4-6% ✓" if 0.04 <= event_rate <= 0.06 else f"   • Eventos:       {event_rate:.1%} (esperado 4-6%)")
-        print("   • Modo MANUAL:  15-30% ✓" if 0.15 <= manual_rate <= 0.30 else f"   • Modo MANUAL:  {manual_rate:.1%} (esperado 15-30%)")
-        print("   • P95 CLEAN:     70-95 NTU ✓" if 70 <= p95_clean <= 95 else f"   • P95 CLEAN:     {p95_clean:.1f} NTU (esperado 70-95)")
-        print("   • P99 CLEAN:     120-180 NTU ✓" if 120 <= p99_clean <= 180 else f"   • P99 CLEAN:     {p99_clean:.1f} NTU (esperado 120-180)")
+        turb_clean = df[clean_col].dropna()
+
+        turb_green = (df[clean_col] < 50)
+        turb_degraded = (df[clean_col] >= 50) & (df[clean_col] <= 100)
+        turb_critical = (df[clean_col] > 100)
+
+        print(f"\n🟩 7. CLARIFICACIÓN — ZONA VERDE / DEGRADACIÓN (CLEAN, metalurgista):")
+        print(f"   • Verde   (CLEAN < 50 NTU):        {float(turb_green.mean()):.2%}")
+        print(f"   • Degrad. (50–100 NTU):            {float(turb_degraded.mean()):.2%}")
+        print(f"   • Crítico (CLEAN > 100 NTU):       {float(turb_critical.mean()):.2%}")
+        print(f"   • Sobre spec (CLEAN > {spec_limit:.0f}): {float((df[clean_col] > spec_limit).mean()):.2%}")
+
+    # Secondary KPI: mechanical/UF health (reported independently, not ANDed)
+    bed_alert = ((df["BedLevel_m"] < 1.5) | (df["BedLevel_m"] > 2.5)) if "BedLevel_m" in df.columns else pd.Series(False, index=df.index)
+    tq_alert = ((df["RakeTorque_pct"] < 30) | (df["RakeTorque_pct"] > 50)) if "RakeTorque_pct" in df.columns else pd.Series(False, index=df.index)
+    uf_alert = ((df["Solids_u_pct"] < 62) | (df["Solids_u_pct"] > 68)) if "Solids_u_pct" in df.columns else pd.Series(False, index=df.index)
+
+    print(f"\n🛠️  7B. MECÁNICA/UF — % fuera de banda verde (referencial):")
+    print(f"   • Bed fuera 1.5–2.5 m:             {float(bed_alert.mean()):.2%}")
+    print(f"   • Torque fuera 30–50%:             {float(tq_alert.mean()):.2%}")
+    print(f"   • UF density fuera 62–68%:         {float(uf_alert.mean()):.2%}")
+
+    print(f"\n✅ 8. RESUMEN:")
+    print("   • MANUAL 15–30% ✓" if 0.15 <= manual_rate <= 0.30 else f"   • MANUAL: {manual_rate:.1%} (esperado 15–30%)")
+
+    if clean_col in df.columns:
+        degraded_target_ok = 0.12 <= float(turb_degraded.mean()) <= 0.18
+        print("   • Degradación (50–100) ~15% ✓" if degraded_target_ok else f"   • Degradación (50–100): {float(turb_degraded.mean()):.1%} (meta ~15%)")
+
+    # Event rate is a separate concept: sustained crisis > event_limit for >= 20 min
+    print("   • Eventos (crisis sostenida) 3–6% ✓" if 0.03 <= event_rate <= 0.06 else f"   • Eventos (crisis sostenida): {event_rate:.1%} (típico 3–6% para ML)")
 
     print("\n" + "=" * 60)
     print("✅ Validación completada")
