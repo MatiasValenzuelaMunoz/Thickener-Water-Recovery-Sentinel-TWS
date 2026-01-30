@@ -26,7 +26,7 @@ Esto permite entrenar modelos robustos **sin contaminar el etiquetado** por drif
 - `FLOC`: subdosificación/problemas de preparación de floculante
 
 ## Escenario del dataset (contexto operacional)
-Este dataset representa la operación de **un espesador de relaves** en una planta concentradora, con variabilidad de mineral, restricciones de descarga y acciones de operador.
+Este dataset representa la operación de **un espesador de relaves** (una línea) en una planta concentradora, con variabilidad de mineral, restricciones de descarga y acciones de operador.
 
 ### Temporalidad y resolución
 - Ventana simulada: **90 días continuos**
@@ -50,13 +50,31 @@ Este dataset representa la operación de **un espesador de relaves** en una plan
   - media: **579.42 m³/h**
   - P50: **569.61 m³/h**
   - P95: **776.36 m³/h**
-- `Qf_pulp_m3h`: ~250–900 m³/h (simulado, antes de dilución)
-- `Solids_f_pct`: ~6–22% (proxy)
+- `Solids_f_pct`:
+  - media: **14.03%**
+  - P50: **14.03%**
+  - P95: **17.09%**
 - `Overflow_Turb_NTU_clean`: 5–160 NTU (cap)
 - Modo MANUAL: objetivo 15–30% del tiempo
 
+### Capacidad equivalente de planta (balance rápido)
+Para dar escala física, se estima capacidad equivalente usando:
+- densidad de sólido: **ρ_s = 2.7 t/m³**
+- recuperación en peso a concentrado (mass pull): **8%**
+- supuesto: este dataset representa **1 espesador / 1 línea**; un escenario industrial realista considera **2 espesadores en paralelo**.
+
+**Estimación por línea (1 espesador):**
+- Sólidos a relaves: ~**219 t/h** (≈ **5.3 ktpd**)
+- Alimentación equivalente a planta: relaves / 0.92 ≈ **239 t/h** (≈ **5.7 ktpd**)
+
+**Estimación planta total (2 espesadores en paralelo):**
+- Alimentación equivalente a planta: ~**477 t/h** (≈ **11.4 ktpd**)
+- Concentrado (8%): ~**38 t/h** (≈ **0.9 ktpd**)
+
+> Estas cifras son “orden de magnitud” (back-of-envelope) para contextualizar el dataset; no representan una planta específica.
+
 ### Qué significa “realista” aquí
-No busca replicar una planta específica, sino capturar **patrones operacionales plausibles**:
+No busca replicar una operación particular, sino capturar **patrones operacionales plausibles**:
 - campañas causales (CLAY/UF/FLOC),
 - retardos (lags) implícitos en el proceso,
 - fallas instrumentales localizadas (missing/stuck/spikes/drift),
