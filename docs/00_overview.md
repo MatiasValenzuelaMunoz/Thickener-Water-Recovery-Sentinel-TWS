@@ -28,6 +28,27 @@ Esto permite entrenar modelos robustos **sin contaminar el etiquetado** por drif
 ## Escenario del dataset (contexto operacional)
 Este dataset representa la operación de **un espesador de relaves** (una línea) en una planta concentradora, con variabilidad de mineral, restricciones de descarga y acciones de operador.
 
+## KPIs del escenario (alineado a metalurgista)
+Para dar realismo operacional, el desempeño de clarificación se resume usando turbidez **CLEAN** (`Overflow_Turb_NTU_clean`) en tres bandas:
+
+- **Zona verde:** `< 50 NTU` (operación normal)
+- **Degradación:** `50–100 NTU` (requiere corrección; meta ~15% del tiempo)
+- **Crítico:** `> 100 NTU` (impacto operacional relevante)
+- **Spec/KPI severo:** `> 200 NTU` (pocos % del tiempo; alta severidad)
+
+Además, se define **evento (crisis sostenida)** para etiquetas de ML:
+- `event_now = 1` cuando `Overflow_Turb_NTU_clean > 100 NTU` sostenido por ≥20 min (`sustain_points=4` a 5 min).
+
+> Nota: la recomendación “~15%” se interpreta como **tiempo degradado (50–100)**, no como prevalencia de eventos sostenidos. Los eventos sostenidos se calibran típicamente a 3–6% para tener suficientes episodios sin perder realismo.
+
+### Calibración (resultado de referencia)
+En la configuración seleccionada (`deadband=0.30`), se obtuvo:
+- Verde: ~77.8%
+- Degradación: ~12.8%
+- Crítico: ~9.4%
+- Spec >200: ~0.7%
+- Eventos sostenidos: ~5.1%
+
 ### Temporalidad y resolución
 - Ventana simulada: **90 días continuos**
 - Frecuencia de muestreo: **cada 5 minutos**
