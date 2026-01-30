@@ -1,4 +1,6 @@
 numpy
 pandas
 pyarrow
+matplotlib
+scikit-learn
 dataclasses; python_version < '3.7'

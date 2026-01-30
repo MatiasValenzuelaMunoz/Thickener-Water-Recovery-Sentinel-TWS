@@ -33,8 +33,8 @@ class SimConfig:
     days: int = 90
     freq_min: int = 5
 
-    spec_limit_NTU: float = 80.0
-    event_limit_NTU: float = 70.0
+    spec_limit_NTU: float = 200.0
+    event_limit_NTU: float = 100.0
     sustain_points: int = 4          # 20 min sustained
     horizon_points: int = 6          # 30 min
 
@@ -44,12 +44,12 @@ class SimConfig:
     clay_days: int = 14
     uf_days: int = 14
     floc_days: int = 14
-    base_turb_min: float = 10.0
-    base_turb_max: float = 30.0
-    turb_max: float = 160.0
+    base_turb_min: float = 20.0
+    base_turb_max: float = 45.0
+    turb_max: float = 600.0
 
-    deadband: float = 0.33
-    turb_power: float = 1.75
+    deadband: float = 0.30
+    turb_power: float = 1.60
 
     # explicit feed dilution (operational action)
     feed_dilution_events_per_30d: float = 3.0
@@ -65,7 +65,7 @@ class SimConfig:
     drift_magnitude: Dict[str, float] | None = None
 
     # calibration search upper bound (needs to be high with turb_power=1.6)
-    scale_search_hi: float = 2500.0
+    scale_search_hi: float = 6000.0
 
 
 def _default_drift_magnitude() -> Dict[str, float]:
@@ -132,11 +132,12 @@ def simulate_clean(cfg: SimConfig) -> tuple[pd.DataFrame, dict]:
     qf_rw = np.cumsum(rng.normal(0, 0.8, n))
     Qf_pulp = np.clip(qf_base + diurnal + qf_rw + rng.normal(0, 25, n), 250, 900)
 
-    Sol_f_base = np.clip(
-        14 + 2.0 * np.sin(np.linspace(0, 4 * np.pi * cfg.days, n)) + 0.002 * (Qf_pulp - 550) + rng.normal(0, 1.2, n),
-        8,
-        22,
-    )
+    # Feed solids % (mass %) aligned to conventional Cu/Mo thickener feed density:
+    # Normal: 25–40% (optimum ~30–35); allow excursions 20–45.
+    Sol_f_base = 32.0 + 3.0 * np.sin(np.linspace(0, 4 * np.pi * cfg.days, n))
+    Sol_f_base += 0.003 * (Qf_pulp - 550)  # weak coupling
+    Sol_f_base += rng.normal(0, 1.8, n)
+    Sol_f_base = np.clip(Sol_f_base, 20, 45)
 
     # ---------------------------------------------------------------------
     # Explicit feed dilution schedule
@@ -179,7 +180,7 @@ def simulate_clean(cfg: SimConfig) -> tuple[pd.DataFrame, dict]:
     # Recompute final feed solids % by mixing.
     # solids mass proxy from pulp stream stays constant; only total volumetric flow increases.
     Ms = Qf_pulp * (Sol_f_base / 100.0)
-    Sol_f = np.clip(100.0 * Ms / np.maximum(Qf_total, 1e-6), 6, 22)
+    Sol_f = np.clip(100.0 * Ms / np.maximum(Qf_total, 1e-6), 18, 45)
 
     # Fines
     PSD = np.zeros(n)
@@ -199,9 +200,15 @@ def simulate_clean(cfg: SimConfig) -> tuple[pd.DataFrame, dict]:
     load_norm = normalize_01(solids_load)
 
     # Floc
-    floc_auto = 10 + 16 * PSD + 10 * load_norm + rng.normal(0, 1.4, n)
-    floc_auto = np.where(regime == "FLOC", floc_auto * rng.uniform(0.55, 0.75), floc_auto)
-    Floc = np.clip(floc_auto, 5, 40)
+    # Floc dose g/t aligned to typical Cu/Mo:
+    # Normal 20–60; CLAY can reach 60–80.
+    floc_auto = 18 + 30 * PSD + 16 * load_norm + rng.normal(0, 2.0, n)
+
+    # FLOC regime: underdosing / preparation issues
+    floc_auto = np.where(regime == "FLOC", floc_auto * rng.uniform(0.55, 0.80), floc_auto)
+
+    # Allow higher ceiling in CLAY
+    Floc = np.clip(floc_auto, 15, 80)
 
     # UF capacity (more frequent, stronger degradations)
     UF_capacity = np.ones(n)
@@ -231,7 +238,15 @@ def simulate_clean(cfg: SimConfig) -> tuple[pd.DataFrame, dict]:
         torque_target = 20 + 16 * bed[i] + 22 * PSD[i]
         torque[i] = np.clip(0.97 * torque[i - 1] + 0.03 * torque_target + rng.normal(0, 1.0), 10, 95)
 
-    Sol_u = np.clip(58 + 5.0 * (bed - 1.5) - 7.0 * PSD - 0.010 * (Qu - 220) + rng.normal(0, 1.4, n), 45, 68)
+    # Underflow density aligned: Normal 62–68, overall 50–75.
+    Sol_u = 64.0 + 4.0 * (bed - 1.8) - 6.5 * (PSD - 0.25) - 0.006 * (Qu - 260)
+    Sol_u += rng.normal(0, 1.6, n)
+
+    # Make UF restrictions and CLAY slightly reduce UF density (more trapped water)
+    Sol_u += np.where(regime == "UF", -2.0 * (1.0 - UF_capacity) * 3.0, 0.0)
+    Sol_u += np.where(regime == "CLAY", -1.5 * PSD, 0.0)
+
+    Sol_u = np.clip(Sol_u, 50, 75)
 
     # ControlMode (tuned to hit 15-30%)
     control_mode = np.array(["AUTO"] * n, dtype=object)
