@@ -1,91 +1,50 @@
-# Campañas sintéticas — CLAY / UF / FLOC (y acciones operacionales)
+# Campaigns / Scenarios (Synthetic Regimes)
 
-Este documento define las campañas (mecanismos causales sintéticos) y cómo se reflejan en variables del dataset.
-Enfocado en uso operacional: **firma → diagnóstico → acción**.
+The simulator organizes the dataset into regimes that mimic common operational “campaigns”.
+These regimes are *not* perfect ground truth of root cause in real plants, but they create distinct signatures.
 
-## Cómo se usan las campañas en el simulador
-- `Regime` programa períodos consecutivos: `NORMAL` → `CLAY` → `UF` → `FLOC`.
-- `event_now` se etiqueta desde `Overflow_Turb_NTU_clean`:
-  - CLEAN > `event_limit_NTU` (70) sostenido `sustain_points=4` (20 min).
-- `event_type` se asigna durante evento según driver dominante (fines / UF / floc).
+## Regimes
+### 1) NORMAL
+**Intent:** stable operation.
+**Typical signals:**
+- lower `PSD_fines_idx`, lower `Clay_pct`
+- moderate `Floc_gpt` (~10–20 g/t)
+- `Overflow_Turb_NTU_clean` mostly <50 NTU (green)
+- `UF_YieldStress_Pa` mostly <10 Pa (good)
 
-## Acción explícita: dilución de alimentación (feed dilution)
-La dilución se modela como **más agua al feed**:
-- `Qf_total_m3h = Qf_pulp_m3h + Qf_dilution_m3h`
-- `Solids_f_pct` baja por mezcla (proxy)
-- `Qf_m3h` es alias SCADA de `Qf_total_m3h`
+### 2) CLAY
+**Intent:** clay/fines increase, reology worsens.
+**Typical signals:**
+- `Clay_pct` and `PSD_fines_idx` increase
+- higher floc demand; dilution action more likely
+- `UF_YieldStress_Pa` increases (can increase torque even if Cp is not extreme)
+- `Overflow_Turb_NTU_clean` more often in degraded/critical
 
-Esto permite evaluar prescriptivo simple: “activar dilución” y observar su efecto en riesgo de evento.
+### 3) UF
+**Intent:** underflow capacity restrictions (pumping/valve/transport limitations).
+**Typical signals:**
+- `UF_capacity_factor` drops
+- `Qu_m3h` reduces relative to feed
+- bed level tends to rise
+- turbidity may worsen due to process imbalance and residence time changes
 
----
+### 4) FLOC
+**Intent:** reagent preparation / dosing effectiveness problems.
+**Typical signals:**
+- `Floc_gpt` systematically below “need”
+- turbidity worsens without necessarily large changes in UF capacity
+- operator actions may increase floc
 
-## Escenario 1 — CLAY (Ataque de finos/arcillas)
+## Event typing (`event_type`)
+During `event_now == 1`, events are assigned a dominant mode:
+- `CLAY`: fines/clay-driven
+- `UF`: underflow restriction-driven
+- `FLOC`: floc underperformance-driven
+- `NONE`: no event
 
-### Firma esperada (síntomas)
-- `Overflow_Turb_NTU_clean` ↑↑ (overflow “lechoso”)
-- `PSD_fines_idx` ↑↑ (driver)
-- `BedLevel_m` variable (puede bajar al inicio y luego subir si se acumula)
-- `RakeTorque_pct` ↔/↑ (secundario)
+This is a synthetic proxy to support diagnosis experiments.
 
-### Acción inmediata (modo “bombero”)
-- Activar dilución de alimentación:
-  - `FeedDilution_On=1`
-  - `Qf_dilution_m3h > 0`
-  - `Qf_total_m3h` ↑
-  - `Solids_f_pct` ↓
-
-### Objetivos de modelado (CLAY)
-- Predecir `target_event_30m`.
-- Explicar drivers (sensibilidad a `PSD_fines_idx`, carga efectiva, etc.).
-- Evaluar impacto de dilución sobre riesgo (prescriptivo).
-
----
-
-## Escenario 2 — UF (Degradación de capacidad del underflow)
-
-### Firma esperada (síntomas)
-- `UF_capacity_factor` ↓ (restricción)
-- `BedLevel_m` ↑↑
-- `RakeTorque_pct` ↑↑
-- `Qu_m3h` restringido (no evacua inventario)
-- `Solids_u_pct` tiende a ↓/inestable (proxy)
-
-### Acción inmediata (modo “bombero”, conceptual)
-- Aumentar capacidad de descarga / aliviar UF (p.ej. dilución UF, aumento de bombeo, reducción temporal de feed).
-
-### Objetivos de modelado (UF)
-- Anticipar eventos UF y minimizar falsas alarmas por subidas transitorias de torque/bed.
-
----
-
-## Escenario 3 — FLOC (Subdosificación de floculante)
-
-### Firma esperada (síntomas)
-- `Floc_gpt` bajo vs necesidad
-- `Overflow_Turb_*` ↑↑
-- `BedLevel_m` baja/estable
-- `RakeTorque_pct` ↔ (sin firma mecánica fuerte)
-
-### Acción inmediata (modo “bombero”, conceptual)
-- Aumentar `Floc_gpt` y verificar preparación/calibración.
-
-### Objetivos de modelado (FLOC)
-- Distinguir déficit real de floc vs ruido instrumental en turbidez medida.
-
----
-
-## Tabla de impacto (dirección esperada)
-Leyenda: ↑ aumenta, ↓ disminuye, ↔ neutro/variable
-
-| Variable | CLAY | UF | FLOC |
-|---|---:|---:|---:|
-| `PSD_fines_idx` | ↑�� | ↔ | ↔ |
-| `UF_capacity_factor` | ↔ | ↓↓ | ↔ |
-| `BedLevel_m` | ↔/variable | ↑↑ | ↔/↓ |
-| `RakeTorque_pct` | ↔/↑ | ↑↑ | ↔ |
-| `Floc_gpt` | ↑ (acción cautelosa) | ↔ | ↓↓ (causa) |
-| `FeedDilution_On` | ↑ (acción) | ↔ | ↔ |
-| `Qf_total_m3h` | ↑ (dilución) | ↔ | ↔ |
-| `Solids_f_pct` | ↓ (dilución) | ↔ | ↔ |
-| `Overflow_Turb_NTU_clean` | ↑↑ | ↑ | ↑↑ |
-| `Overflow_Turb_NTU` | ↑↑ (+ fallas) | ↑ (+ fallas) | ↑↑ (+ fallas) |
+## Practical use in notebooks
+- Use `Regime` for narrative and controlled analysis.
+- Use `event_type` as “diagnosis label” for a baseline classifier (optional).
+- Always evaluate alert performance against `Overflow_Turb_NTU_clean`-based labels.
