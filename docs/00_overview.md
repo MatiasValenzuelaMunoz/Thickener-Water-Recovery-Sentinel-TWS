@@ -1,117 +1,126 @@
-# TWS — Overview (portafolio)
+# Project Overview — Thickener Water Recovery Sentinel (TWS)
 
-## Qué es
-**Thickener Water Recovery Sentinel (TWS)** es un proyecto personal para demostrar analítica aplicada a **procesos minero-metalúrgicos**, enfocado en **alerta temprana** de deterioro de clarificación (turbidez alta en overflow) usando un **dataset sintético reproducible** (sin datos sensibles).
+## Purpose
+Build a realistic thickener dataset and baseline models for:
+1) **Early warning** of clarified water quality degradation (overflow turbidity),
+2) **Diagnosis** of probable causes (CLAY / UF / FLOC),
+3) **Data quality / sensor health** to avoid acting on faulty instrumentation.
 
-## Por qué importa en planta
-Eventos sostenidos de turbidez alta:
-- reducen recuperación de agua
-- aumentan variabilidad operacional
-- incrementan intervención manual y riesgo de restricciones (bed/torque/descarga)
+This is designed to be credible to operations: many tags exist, but **trust varies**; turbidity sensors are often unreliable.
 
-## Idea diferenciadora
-Separación explícita entre:
-- `Overflow_Turb_NTU_clean` (ground truth del proceso) → define labels
-- `Overflow_Turb_NTU` (medición con fallas) → se usa como feature realista
+---
 
-Esto permite entrenar modelos robustos **sin contaminar el etiquetado** por drift/spikes/missing.
+## Dataset structure: Truth vs Observed (SCADA-like)
 
-## Umbrales
-- `event_limit_NTU = 70` (warning): base de etiquetas y calibración
-- `spec_limit_NTU = 80` (spec): KPI operacional
+### Truth / clean (process state)
+- `Overflow_Turb_NTU_clean` — clarified water turbidity (ground truth)
+- `UF_YieldStress_Pa` — underflow yield stress proxy (truth rheology)
+- `Clay_pct`, `Clay_idx` — latent clay driver (truth; not assumed measured online)
 
-## Campañas simuladas (causas)
-- `CLAY`: ataque de finos/arcillas
-- `UF`: degradación de capacidad de underflow (restricción de descarga)
-- `FLOC`: subdosificación/problemas de preparación de floculante
+### Observed / measured tags (may include failures)
+- `Overflow_Turb_NTU` — measured turbidity (spikes/stuck/drift/missing)
+- `Qf_m3h` — total feed flow SCADA tag (spikes/stuck/drift/missing)
+- `Solids_u_pct` — underflow solids SCADA-like tag (spikes/stuck/drift/missing)
 
-## Escenario del dataset (contexto operacional)
-Este dataset representa la operación de **un espesador de relaves** (una línea) en una planta concentradora, con variabilidad de mineral, restricciones de descarga y acciones de operador.
+High-reliability operational signals (simulated clean for now):
+- `RakeTorque_kNm`, `RakeTorque_pct` (very reliable in practice)
+- `BedLevel_m` (often unreliable in practice; currently simulated clean)
+- `Qu_m3h`, `Floc_gpt`, `ControlMode`, `OperatorAction`
+- `FeedDilution_On`, `FeedDilution_factor`
 
-## KPIs del escenario (alineado a metalurgista)
-Para dar realismo operacional, el desempeño de clarificación se resume usando turbidez **CLEAN** (`Overflow_Turb_NTU_clean`) en tres bandas:
+---
 
-- **Zona verde:** `< 50 NTU` (operación normal)
-- **Degradación:** `50–100 NTU` (requiere corrección; meta ~15% del tiempo)
-- **Crítico:** `> 100 NTU` (impacto operacional relevante)
-- **Spec/KPI severo:** `> 200 NTU` (pocos % del tiempo; alta severidad)
+## Layered scope
 
-Además, se define **evento (crisis sostenida)** para etiquetas de ML:
-- `event_now = 1` cuando `Overflow_Turb_NTU_clean > 100 NTU` sostenido por ≥20 min (`sustain_points=4` a 5 min).
+### Layer A — Core (non-negotiable)
+Goal: robust early-warning + diagnosis using a realistic minimal signal set.
 
-> Nota: la recomendación “~15%” se interpreta como **tiempo degradado (50–100)**, no como prevalencia de eventos sostenidos. Los eventos sostenidos se calibran típicamente a 3–6% para tener suficientes episodios sin perder realismo.
+Core variables:
+- Turbidity: `Overflow_Turb_NTU_clean`, `Overflow_Turb_NTU`
+- Torque: `RakeTorque_kNm`, `RakeTorque_pct`
+- Bed level: `BedLevel_m`
+- Underflow: `Qu_m3h`, `Solids_u_pct`
+- Control actions: `Floc_gpt`, `FeedDilution_On`
+- Operator: `ControlMode`, `OperatorAction`
+- Rheology truth: `UF_YieldStress_Pa`
 
-### Calibración (resultado de referencia)
-En la configuración seleccionada (`deadband=0.30`), se obtuvo:
-- Verde: ~77.8%
-- Degradación: ~12.8%
-- Crítico: ~9.4%
-- Spec >200: ~0.7%
-- Eventos sostenidos: ~5.1%
+Key realism principle (Ricardo):
+- **Torque correlates with rheology (Yield Stress), not directly with Cp (% solids).**
+  This supports scenarios where Cp can be high with low torque, or vice versa, depending on clay/rheology.
 
-### Temporalidad y resolución
-- Ventana simulada: **90 días continuos**
-- Frecuencia de muestreo: **cada 5 minutos**
-- Total típico: **25,920 registros**
-- Horizonte de predicción objetivo: **30 min** (`target_event_30m`)
-- Definición de evento: turbidez CLEAN > 70 NTU sostenido **20 min** (`sustain_points=4`)
+### Layer B — High-ROI realism (choose 1–2)
+- `Feed_P80_um` intermittent measurement (sample-and-hold, e.g., every 4h)
+- `Water_Conductivity_uS_cm` (robust online sensor)
+- `pH_meas` (low reliability) + confidence scoring
 
-### Dimensiones “operacionales” (caudales)
-- **Caudal total a espesador** (tag SCADA): `Qf_m3h` (m³/h)  
-  - En este proyecto, `Qf_m3h` es alias de `Qf_total_m3h` (caudal total real al espesador).
-- Descomposición del caudal:
-  - `Qf_pulp_m3h`: caudal de pulpa base (sin agua añadida)
-  - `Qf_dilution_m3h`: agua de dilución (acción operacional)
-  - `Qf_total_m3h = Qf_pulp_m3h + Qf_dilution_m3h`
+Arcillas:
+- Do **not** model clay as a reliable online measurement.
+- Use `Clay_pct` only as latent truth for simulation/evaluation.
+- Infer “clay probability” from proxies (P80 trend, torque/bed, floc efficiency, etc.)
 
-> Interpretación: cuando `FeedDilution_On=1`, el operador agrega agua, sube `Qf_total_m3h` y baja `Solids_f_pct` por mezcla.
+---
 
-### Rangos típicos (del dataset actual)
-- `Qf_total_m3h`:
-  - media: **579.42 m³/h**
-  - P50: **569.61 m³/h**
-  - P95: **776.36 m³/h**
-- `Solids_f_pct`:
-  - media: **14.03%**
-  - P50: **14.03%**
-  - P95: **17.09%**
-- `Overflow_Turb_NTU_clean`: 5–160 NTU (cap)
-- Modo MANUAL: objetivo 15–30% del tiempo
+## Labels
 
-### Capacidad equivalente de planta (balance rápido)
-Para dar escala física, se estima capacidad equivalente usando:
-- densidad de sólido: **ρ_s = 2.7 t/m³**
-- recuperación en peso a concentrado (mass pull): **8%**
-- supuesto: este dataset representa **1 espesador / 1 línea**; un escenario industrial realista considera **2 espesadores en paralelo**.
+### Event definition
+- `event_now = 1` when `Overflow_Turb_NTU_clean > 100 NTU` is sustained for `sustain_points` samples.
+- Default: `freq_min = 5`, `sustain_points = 4` → **20 minutes sustained**
 
-**Estimación por línea (1 espesador):**
-- Sólidos a relaves: ~**219 t/h** (≈ **5.3 ktpd**)
-- Alimentación equivalente a planta: relaves / 0.92 ≈ **239 t/h** (≈ **5.7 ktpd**)
+### Forecast target
+- `target_event_30m = shift(event_now, -horizon_points)`
+- Default: `horizon_points = 6` → **30 minutes**
 
-**Estimación planta total (2 espesadores en paralelo):**
-- Alimentación equivalente a planta: ~**477 t/h** (≈ **11.4 ktpd**)
-- Concentrado (8%): ~**38 t/h** (≈ **0.9 ktpd**)
+### Cause tags
+- `event_type` uses the dominant stress component during events: `CLAY`, `UF`, `FLOC` (or `NONE`)
 
-> Estas cifras son “orden de magnitud” (back-of-envelope) para contextualizar el dataset; no representan una planta específica.
+---
 
-### Qué significa “realista” aquí
-No busca replicar una operación particular, sino capturar **patrones operacionales plausibles**:
-- campañas causales (CLAY/UF/FLOC),
-- retardos (lags) implícitos en el proceso,
-- fallas instrumentales localizadas (missing/stuck/spikes/drift),
-- acción prescriptiva explícita (dilución de feed).
+## How to run
 
-## Acción operacional modelada explícitamente (prescriptivo)
-El dataset incluye una acción “bombero” realista: **dilución de alimentación** para ganar tiempo ante mala clarificación.
-Se refleja en:
-- `FeedDilution_On` (0/1)
-- `Qf_dilution_m3h` (agua añadida)
-- `Qf_total_m3h` (caudal total al espesador)
-- `Solids_f_pct` (baja por mezcla)
+### Generate dataset
+```bash
+python src/simulate_fixed.py
+```
 
-> Nota: `Qf_m3h` se mantiene como alias compatible y representa el caudal total (`Qf_total_m3h`).
+### Validate quickly
+```bash
+python src/quick_checks.py
+```
 
-## Salidas esperadas del proyecto (portafolio)
-1) Modelo baseline con validación temporal (PR-AUC, falsas alarmas/día).
-2) Explicabilidad operacional (drivers coherentes con proceso).
-3) Extensión prescriptiva: “qué hacer” según firma (incluye dilución de feed).
+---
+
+## EDA: 5 required figures (Definition of Done)
+
+1) **Timeline operational**
+- CLEAN vs measured turbidity
+- bands: green <50, degraded 50–100, critical >100
+- markers: `event_now`
+- shading: `ControlMode == MANUAL`
+
+2) **Event episodes**
+- derive episodes from `event_now`
+- scatter: duration vs severity (max CLEAN NTU)
+- color by `event_type`
+
+3) **Torque & rheology validation**
+- scatter: `RakeTorque_kNm` vs `UF_YieldStress_Pa`
+- comparison: `RakeTorque_kNm` vs `Solids_u_pct` (weaker relationship)
+
+4) **Sensor error characterization**
+- histogram of `(Overflow_Turb_NTU - Overflow_Turb_NTU_clean)`
+- scatter measured vs clean
+
+5) **Efficiency trade-off view (proxy)**
+- proxy of water recovery vs turbidity quality
+- relate to `Solids_u_pct` and `UF_YieldStress_Pa`
+
+---
+
+## Next steps (ML baseline)
+- Build lag/rolling features from measured tags
+- Temporal split (train early, test late)
+- Operational metrics:
+  - false alarms/day
+  - missed events
+  - lead time (how early we warn before sustained >100 NTU)
+- Add a simple sensor-health score for turbidity (stuck/drift heuristics) and test its impact.
