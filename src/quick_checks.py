@@ -142,7 +142,6 @@ def main():
     # time in green vs non-green turbidity bands than to "all tags simultaneously OK".
     if clean_col in df.columns:
         turb_clean = df[clean_col].dropna()
-
         turb_green = (df[clean_col] < 50)
         turb_degraded = (df[clean_col] >= 50) & (df[clean_col] <= 100)
         turb_critical = (df[clean_col] > 100)

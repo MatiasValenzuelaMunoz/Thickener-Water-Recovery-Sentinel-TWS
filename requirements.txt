@@ -2,5 +2,7 @@ numpy
 pandas
 pyarrow
 matplotlib
+plotly
+statsmodels
 scikit-learn
 dataclasses; python_version < '3.7'
