@@ -1,23 +1,29 @@
 """
-simulate_fixed.py (v6) - synthetic tailings thickener dataset with:
-- clean process truth turbidity (Overflow_Turb_NTU_clean)
-- measured turbidity with instrumentation failures (Overflow_Turb_NTU)
-- events labeled from clean turbidity (ground truth)
-- explicit feed dilution action with physically consistent total feed flow:
-    Qf_pulp_m3h (pulp stream)
-    Qf_dilution_m3h (added water)
-    Qf_total_m3h (pulp + added water)
-    Qf_m3h is kept for backward compatibility and equals Qf_total_m3h
+simulate_fixed.py (v7.0) - Operationally realistic thickener dataset (portfolio-grade).
 
-Adds (Ricardo-driven realism):
-- Clay_pct / Clay_idx (latent driver; not a "measured online sensor")
-- UF_YieldStress_Pa (truth rheology proxy)
-- RakeTorque_kNm and RakeTorque_pct derived from kNm (torque correlates with yield stress)
+Goals supported:
+1) Early warning: forecast sustained clean turbidity crises (>100 NTU clean) at 30 minutes.
+2) Diagnosis: cause mode (CLAY / UF / FLOC).
+3) Sensor health: measured turbidity failures + quality context.
+4) Playbook: recommended operator actions + trade-offs; includes operator interventions.
 
-Run:
-  python src/simulate_fixed.py
-Then:
-  python src/quick_checks.py
+Key modeling choices (to keep coherence + stability):
+- Keep "truth" process variables (clean turbidity, YS, bed) separate from measured tags (failures injected).
+- Model CLAY/UF as campaigns; FLOC as short incidents (prep failures).
+- Use a torque PROXY (kNm-like) driven by YieldStress and Bed + clay bogging term.
+  It is NOT dimensioned by D and K to avoid runaway scaling; it is an operational indicator.
+- Closed-loop operator: actions change manipulated variables with small, bounded gains:
+    - UF valve / pump (affects Qu a bit; trade-off: carryover increases turbidity)
+    - Floc setpoint (affects effective floc; trade-off: over-dosing increases YS/torque)
+    - Feed dilution (already present; trade-off: lowers YS/torque, may reduce water recovery proxy)
+- Add playbook columns:
+    - RecommendedAction (heuristic)
+    - ExpectedTradeoff (text label)
+    - ActionScore_turb / ActionScore_torque (simple signed scores)
+
+Outputs:
+- data/processed/thickener_timeseries.parquet (latest)
+- data/processed/thickener_timeseries_deadband{...}_sp{...}.parquet (versioned)
 """
 
 from __future__ import annotations
@@ -38,28 +44,50 @@ class SimConfig:
 
     spec_limit_NTU: float = 200.0
     event_limit_NTU: float = 100.0
-    sustain_points: int = 4          # 20 min sustained
+    sustain_points: int = 4          # 20 min
     horizon_points: int = 6          # 30 min
 
     target_event_rate: float = 0.05
     target_tolerance: float = 0.006
 
+    # campaigns (days)
     clay_days: int = 14
     uf_days: int = 14
-    floc_days: int = 14
+
+    # turbidity response
     base_turb_min: float = 20.0
     base_turb_max: float = 45.0
     turb_max: float = 600.0
+    deadband: float = 0.27
+    turb_power: float = 1.55
+    scale_search_hi: float = 6000.0
 
-    deadband: float = 0.315
-    turb_power: float = 1.60
-
-    # explicit feed dilution (operational action)
+    # explicit dilution action schedule (operator-initiated sometimes)
     feed_dilution_events_per_30d: float = 3.0
     feed_dilution_duration_min: Tuple[int, int] = (60, 240)
-    feed_dilution_factor_range: Tuple[float, float] = (0.75, 0.90)  # multiplier on final Solids_f_pct
+    feed_dilution_factor_range: Tuple[float, float] = (0.75, 0.90)
+    feedwell_solids_target_range_pct: Tuple[float, float] = (12.0, 18.0)
 
-    # failures
+    # floc incidents
+    floc_prep_fail_events_per_30d: float = 4.0
+    floc_prep_fail_duration_min: Tuple[int, int] = (120, 720)  # 2–12h
+    floc_activity_normal_range: Tuple[float, float] = (0.85, 1.05)
+    floc_activity_fail_range: Tuple[float, float] = (0.25, 0.55)
+    floc_max_effect_gpt: float = 22.0
+
+    # torque proxy scaling (kept stable and not saturating)
+    torque_rated_kNm: float = 20.0
+    torque_clip_kNm: float = 80.0
+    torque_noise_kNm: float = 0.35
+
+    # torque/yield stress limits (for gates)
+    ys_limit_Pa: float = 20.0
+
+    # clay ranges
+    clay_pct_min: float = 1.0
+    clay_pct_max: float = 12.0
+
+    # sensor failures
     missing_rate_per_tag: float = 0.01
     spikes_per_day_per_tag: float = 2.0
     stuck_events_per_30d_per_tag: float = 2.0
@@ -67,22 +95,22 @@ class SimConfig:
     drift_events_per_90d_per_tag: float = 1.0
     drift_magnitude: Dict[str, float] | None = None
 
-    # calibration search upper bound
-    scale_search_hi: float = 6000.0
+    # event typing thresholds
+    event_type_override_th_uf: float = 0.55
+    event_type_override_th_floc: float = 0.40
 
-    # Rheology / torque (torque relates to yield stress, not Cp directly)
-    torque_max_kNm: float = 20.0  # used to derive % from kNm
-    ys_soft_limit_Pa: float = 10.0
-    ys_limit_Pa: float = 20.0
-    ys_hard_limit_Pa: float = 30.0
+    # operator closed-loop gains (small and bounded)
+    qu_setpoint_step: float = 12.0          # m3/h step per action
+    qu_setpoint_clip: Tuple[float, float] = (-60.0, 60.0)
 
-    # Clay content (kaolin-like). "manageable" reference band often cited 6–9%
-    clay_pct_min: float = 1.0
-    clay_pct_max: float = 12.0
+    floc_setpoint_step: float = 1.5         # gpt step per action
+    floc_setpoint_clip: Tuple[float, float] = (-8.0, 8.0)
 
-    # Floc typical dosing (g/t)
-    floc_typical_range_gpt: Tuple[float, float] = (10.0, 20.0)
-    floc_max_effect_gpt: float = 22.0  # beyond this, benefit saturates; rheology penalty may rise
+    # carryover penalty when pushing UF hard (trade-off)
+    carryover_gain_NTU: float = 0.12        # NTU per (m3/h) of positive Qu setpoint delta
+
+    # overfloc rheology penalty (trade-off)
+    overfloc_ys_gain: float = 0.18          # multiplier strength
 
 
 def _default_drift_magnitude() -> Dict[str, float]:
@@ -134,15 +162,12 @@ def build_regime_schedule(cfg: SimConfig, n: int) -> np.ndarray:
     start_day = 14
     clay_start = start_day
     uf_start = clay_start + cfg.clay_days
-    floc_start = uf_start + cfg.uf_days
 
     clay_i0, clay_i1 = day_to_idx(clay_start, cfg), day_to_idx(clay_start + cfg.clay_days, cfg)
     uf_i0, uf_i1 = day_to_idx(uf_start, cfg), day_to_idx(uf_start + cfg.uf_days, cfg)
-    floc_i0, floc_i1 = day_to_idx(floc_start, cfg), day_to_idx(floc_start + cfg.floc_days, cfg)
 
     regime[clay_i0:clay_i1] = "CLAY"
     regime[uf_i0:uf_i1] = "UF"
-    regime[floc_i0:floc_i1] = "FLOC"
     return regime
 
 
@@ -160,23 +185,17 @@ def simulate_clean(cfg: SimConfig) -> tuple[pd.DataFrame, dict]:
 
     regime = build_regime_schedule(cfg, n)
 
-    # ---------------------------------------------------------------------
-    # FEED (pulp stream, before dilution)
-    # ---------------------------------------------------------------------
+    # ------------------ Feed (pulp) + dilution schedule ------------------
     qf_base = rng.uniform(450, 650)
     diurnal = 80 * np.sin(np.linspace(0, 2 * np.pi * cfg.days, n))
     qf_rw = np.cumsum(rng.normal(0, 0.8, n))
     Qf_pulp = np.clip(qf_base + diurnal + qf_rw + rng.normal(0, 25, n), 250, 900)
 
-    # Feed solids % (mass %) aligned to conventional Cu/Mo thickener feed density:
     Sol_f_base = 32.0 + 3.0 * np.sin(np.linspace(0, 4 * np.pi * cfg.days, n))
-    Sol_f_base += 0.003 * (Qf_pulp - 550)  # weak coupling
+    Sol_f_base += 0.003 * (Qf_pulp - 550)
     Sol_f_base += rng.normal(0, 1.8, n)
     Sol_f_base = np.clip(Sol_f_base, 20, 45)
 
-    # ---------------------------------------------------------------------
-    # Explicit feed dilution schedule (operational action)
-    # ---------------------------------------------------------------------
     FeedDilution_On = np.zeros(n, dtype=int)
     FeedDilution_factor = np.ones(n, dtype=float)
 
@@ -185,7 +204,6 @@ def simulate_clean(cfg: SimConfig) -> tuple[pd.DataFrame, dict]:
         idx_candidates = np.where(regime == "CLAY")[0] if (rng.random() < 0.75) else np.arange(n)
         if len(idx_candidates) == 0:
             continue
-
         start = int(rng.choice(idx_candidates))
         dur_min = rng.integers(cfg.feed_dilution_duration_min[0], cfg.feed_dilution_duration_min[1] + 1)
         dur = max(1, int(dur_min / cfg.freq_min))
@@ -200,14 +218,17 @@ def simulate_clean(cfg: SimConfig) -> tuple[pd.DataFrame, dict]:
     Qf_dilution[mask_dil] = Qf_pulp[mask_dil] * (1.0 / FeedDilution_factor[mask_dil] - 1.0)
 
     Qf_total = Qf_pulp + Qf_dilution
-
-    # Final feed solids after dilution mixing (solids mass conserved from pulp stream)
     Ms = Qf_pulp * (Sol_f_base / 100.0)
     Sol_f = np.clip(100.0 * Ms / np.maximum(Qf_total, 1e-6), 18, 45)
 
-    # ---------------------------------------------------------------------
-    # FINES + CLAYS (latent drivers)
-    # ---------------------------------------------------------------------
+    # feedwell solids
+    Feedwell_Solids_pct = Sol_f.copy()
+    fw_target = rng.uniform(cfg.feedwell_solids_target_range_pct[0], cfg.feedwell_solids_target_range_pct[1], size=n)
+    Feedwell_Solids_pct[mask_dil] = fw_target[mask_dil] + rng.normal(0, 0.9, int(mask_dil.sum()))
+    Feedwell_Solids_pct[~mask_dil] = Sol_f[~mask_dil] + rng.normal(0, 0.6, int((~mask_dil).sum()))
+    Feedwell_Solids_pct = np.clip(Feedwell_Solids_pct, 8.0, 45.0)
+
+    # ------------------ Latent drivers ------------------
     PSD = np.zeros(n)
     Clay_pct = np.zeros(n)
 
@@ -232,23 +253,37 @@ def simulate_clean(cfg: SimConfig) -> tuple[pd.DataFrame, dict]:
 
     Clay_pct = np.clip(Clay_pct, cfg.clay_pct_min, cfg.clay_pct_max)
     Clay_idx = normalize_01(Clay_pct)
-
     PSD = np.clip(PSD, 0.05, 0.85)
 
     solids_load = Qf_total * (Sol_f / 100.0)
     load_norm = normalize_01(solids_load)
 
-    # ---------------------------------------------------------------------
-    # FLOCCULANT (g/t)
-    # ---------------------------------------------------------------------
+    # ------------------ Floc dose + activity + incidents ------------------
     floc_need = 12 + 18 * PSD + 14 * load_norm + 10 * Clay_idx + rng.normal(0, 1.2, n)
-    floc_auto = floc_need + rng.normal(0, 1.5, n)
-    floc_auto = np.where(regime == "FLOC", floc_auto * rng.uniform(0.55, 0.85), floc_auto)
-    Floc = np.clip(floc_auto, 5, 35)
+    Floc_gpt_base = np.clip(floc_need + rng.normal(0, 1.5, n), 5, 35)
 
-    # ---------------------------------------------------------------------
-    # UF CAPACITY + UNDERFLOW FLOW
-    # ---------------------------------------------------------------------
+    FlocActivity_factor = rng.uniform(cfg.floc_activity_normal_range[0], cfg.floc_activity_normal_range[1], size=n)
+    FlocPrepFail_On = np.zeros(n, dtype=int)
+
+    fail_segments = int(cfg.floc_prep_fail_events_per_30d * (cfg.days / 30.0))
+    for _ in range(fail_segments):
+        idx_candidates = np.where((regime == "NORMAL") | (regime == "CLAY"))[0] if (rng.random() < 0.70) else np.arange(n)
+        if len(idx_candidates) == 0:
+            continue
+        start = int(rng.choice(idx_candidates))
+        dur_min = rng.integers(cfg.floc_prep_fail_duration_min[0], cfg.floc_prep_fail_duration_min[1] + 1)
+        dur = max(1, int(dur_min / cfg.freq_min))
+        end = min(n, start + dur)
+
+        fail_act = rng.uniform(cfg.floc_activity_fail_range[0], cfg.floc_activity_fail_range[1])
+        FlocActivity_factor[start:end] = np.minimum(FlocActivity_factor[start:end], fail_act)
+        FlocPrepFail_On[start:end] = 1
+
+    rm = rolling_mean(FlocActivity_factor, window=6)
+    FlocActivity_factor = 0.90 * FlocActivity_factor + 0.10 * rm
+    FlocActivity_factor = np.clip(FlocActivity_factor, 0.20, 1.2)
+
+    # ------------------ UF capacity + base Qu ------------------
     UF_capacity = np.ones(n)
     uf_mask = (regime == "UF")
     if uf_mask.any():
@@ -260,158 +295,170 @@ def simulate_clean(cfg: SimConfig) -> tuple[pd.DataFrame, dict]:
             cap = rng.uniform(0.70, 0.92)
             UF_capacity[start:start + duration] = np.minimum(UF_capacity[start:start + duration], cap)
 
-    Qu = np.clip((0.35 * Qf_total + rng.normal(0, 18, n)) * UF_capacity, 80, 450)
+    Qu_base = np.clip((0.35 * Qf_total + rng.normal(0, 18, n)) * UF_capacity, 80, 450)
 
-    # ---------------------------------------------------------------------
-    # BED (state)
-    # ---------------------------------------------------------------------
+    # ------------------ Closed-loop operator: setpoint deltas ------------------
+    Qu_sp_delta = np.zeros(n, dtype=float)
+    Floc_sp_delta = np.zeros(n, dtype=float)
+    OperatorAction = np.array(["NONE"] * n, dtype=object)
+    ControlMode = np.array(["AUTO"] * n, dtype=object)
+
+    # We use "observable" proxies to decide actions (no future info)
+    # Here we use truth for simplicity; later you can use measured tags if desired.
+    # We'll compute bed/YS first pass with base Qu, then do a second pass applying setpoints.
+    # For stability, we do a single pass with lagged signals.
+
+    # Placeholder arrays; computed later after bed/YS exists
+    # We'll fill OperatorAction/ControlMode after first bed/YS estimate.
+
+    # ------------------ Bed dynamics (using Qu_base for first pass) ------------------
     bed = np.zeros(n)
     bed[0] = rng.uniform(1.0, 2.0)
-
     for i in range(1, n):
         load_effect = 0.014 * (load_norm[i] - 0.5) + 0.018 * (PSD[i] - 0.3)
         uf_effect = 0.028 * ((1.0 - UF_capacity[i]) * 3.0)
-        drawdown = 0.0010 * ((Qu[i] - 220) / 220.0)
+        drawdown = 0.0010 * ((Qu_base[i] - 220) / 220.0)
         bed[i] = np.clip(bed[i - 1] + load_effect + uf_effect - drawdown + rng.normal(0, 0.01), 0.5, 3.5)
 
-    # ---------------------------------------------------------------------
-    # UNDERFLOW DENSITY (Cp proxy)
-    # ---------------------------------------------------------------------
-    Sol_u = 64.0 + 4.0 * (bed - 1.8) - 6.5 * (PSD - 0.25) - 0.006 * (Qu - 260)
+    # ------------------ Underflow density (first pass) ------------------
+    Sol_u = 64.0 + 4.0 * (bed - 1.8) - 6.5 * (PSD - 0.25) - 0.006 * (Qu_base - 260)
     Sol_u += rng.normal(0, 1.6, n)
     Sol_u += np.where(regime == "UF", -2.0 * (1.0 - UF_capacity) * 3.0, 0.0)
     Sol_u += np.where(regime == "CLAY", -1.5 * PSD, 0.0)
     Sol_u = np.clip(Sol_u, 50, 75)
 
-    # ---------------------------------------------------------------------
-    # UNDERFLOW RHEOLOGY (Yield Stress, Pa) - truth proxy
-    # ---------------------------------------------------------------------
+    # ------------------ Yield stress (truth) base ------------------
     dens_term = np.exp(0.10 * (Sol_u - 60.0))
     clay_amp = 1.0 + 2.5 * Clay_idx
     fines_amp = 1.0 + 0.8 * np.clip(PSD - 0.25, 0.0, 0.6)
 
-    floc_excess = np.clip(Floc - cfg.floc_max_effect_gpt, 0.0, 20.0) / 20.0
-    floc_rheo_penalty = 1.0 + 0.35 * floc_excess
+    # We'll include overfloc penalty later after control actions adjust floc
+    UF_YieldStress_Pa_base = 4.5 * dens_term * clay_amp * fines_amp + rng.normal(0, 0.8, n)
+    UF_YieldStress_Pa_base = np.clip(UF_YieldStress_Pa_base, 0.5, 60.0)
 
-    UF_YieldStress_Pa = 4.5 * dens_term * clay_amp * fines_amp * floc_rheo_penalty + rng.normal(0, 0.8, n)
-    UF_YieldStress_Pa = np.clip(UF_YieldStress_Pa, 0.5, 60.0)
+    # ------------------ Torque proxy base (truth) ------------------
+    # Torque increases with YS and bed; add mild clay bogging interaction.
+    ys = UF_YieldStress_Pa_base
+    ys_gate = np.clip((ys - cfg.ys_limit_Pa) / 20.0, 0.0, 1.0)
+    Bogging_factor = 1.0 + 0.25 * Clay_idx * ys_gate
 
-    # ---------------------------------------------------------------------
-    # TORQUE (kNm primary, % derived)
-    # ---------------------------------------------------------------------
-    rake_kNm = np.zeros(n)
-    torque_pct = np.zeros(n)
+    RakeTorque_kNm_base = (
+        0.35 * ys + 2.0 * bed
+    ) * Bogging_factor + rng.normal(0, cfg.torque_noise_kNm, n)
+    RakeTorque_kNm_base = np.clip(RakeTorque_kNm_base, 0.0, cfg.torque_clip_kNm)
+    RakeTorque_pct_base = 100.0 * RakeTorque_kNm_base / cfg.torque_rated_kNm
 
-    rake_kNm[0] = np.clip(0.35 * UF_YieldStress_Pa[0] + 2.0 * bed[0] + rng.normal(0, 0.5), 0.5, cfg.torque_max_kNm)
-    torque_pct[0] = 100.0 * rake_kNm[0] / cfg.torque_max_kNm
-
-    for i in range(1, n):
-        ys = UF_YieldStress_Pa[i]
-        ys_boost = 1.0 + 0.03 * np.clip(ys - cfg.ys_limit_Pa, 0.0, 40.0)
-
-        torque_target_kNm = (0.28 * ys + 1.8 * bed[i]) * ys_boost
-        torque_target_kNm += 0.3 * np.clip((1.0 - UF_capacity[i]) * 10.0, 0.0, 10.0)
-
-        rake_kNm[i] = np.clip(
-            0.96 * rake_kNm[i - 1] + 0.04 * torque_target_kNm + rng.normal(0, 0.25),
-            0.2,
-            cfg.torque_max_kNm,
-        )
-        torque_pct[i] = 100.0 * rake_kNm[i] / cfg.torque_max_kNm
-
-    # ---------------------------------------------------------------------
-    # CONTROLMODE
-    # ---------------------------------------------------------------------
-    control_mode = np.array(["AUTO"] * n, dtype=object)
-    torque_rm = rolling_mean(torque_pct, window=12)
+    # ------------------ Decide operator mode/actions (based on lagged observables) ------------------
     bed_rm = rolling_mean(bed, window=12)
-
-    manual_prob = np.clip(
-        0.10
-        + 0.22 * (torque_rm > 70).astype(float)
-        + 0.18 * (bed_rm > 2.6).astype(float)
-        + 0.12 * (regime == "FLOC").astype(float)
-        + 0.10 * (regime == "UF").astype(float),
-        0.03,
-        0.85,
-    )
+    torque_rm = rolling_mean(RakeTorque_pct_base, window=12)
 
     rng2 = np.random.default_rng(cfg.seed + 101)
+
     for i in range(1, n):
-        if control_mode[i - 1] == "AUTO":
-            control_mode[i] = "MANUAL" if (rng2.random() < manual_prob[i] * 0.10) else "AUTO"
+        # probability of manual when stressed
+        manual_prob = np.clip(
+            0.08
+            + 0.18 * float(torque_rm[i] > 85)
+            + 0.15 * float(bed_rm[i] > 2.6)
+            + 0.10 * float(regime[i] == "UF")
+            + 0.08 * float(FlocPrepFail_On[i] == 1),
+            0.02, 0.75
+        )
+
+        if ControlMode[i - 1] == "AUTO":
+            ControlMode[i] = "MANUAL" if (rng2.random() < manual_prob * 0.12) else "AUTO"
         else:
-            calm = (torque_rm[i] < 55) and (bed_rm[i] < 2.2)
+            calm = (torque_rm[i] < 70) and (bed_rm[i] < 2.2)
             p_exit = 0.03 + (0.08 if calm else 0.0)
-            control_mode[i] = "AUTO" if (rng2.random() < p_exit) else "MANUAL"
+            ControlMode[i] = "AUTO" if (rng2.random() < p_exit) else "MANUAL"
 
-    # ---------------------------------------------------------------------
-    # OperatorAction + penalty (small effect on turbidity)
-    # ---------------------------------------------------------------------
-    OperatorAction = np.array(["NONE"] * n, dtype=object)
-    action_penalty = np.zeros(n)
-    points_per_hour = int(60 / cfg.freq_min)
-
-    for i in range(n):
-        if control_mode[i] != "MANUAL":
+        if ControlMode[i] != "MANUAL":
             continue
 
-        bed_high = bed[i] > 2.6
-        torque_high = torque_pct[i] > 75  # percent
+        # Action logic (bounded setpoints)
+        bed_high = bed_rm[i] > 2.6
+        torque_high = torque_rm[i] > 90
+
+        # floc deficit proxy using current base (no setpoint yet)
+        # will be improved after we apply setpoint deltas, but good enough for decision
+        FlocEffective_base = Floc_gpt_base[i] * FlocActivity_factor[i]
         floc_need_i = 8 + 16 * PSD[i] + 10 * load_norm[i]
-        floc_low = Floc[i] < (floc_need_i - 3.0)
+        floc_low = FlocEffective_base < (floc_need_i - 3.0)
 
         if bed_high or torque_high:
-            action = "INCREASE_UF" if (rng.random() < 0.85) else "DECREASE_UF"
+            OperatorAction[i] = "INCREASE_UF"
+            Qu_sp_delta[i] = np.clip(Qu_sp_delta[i - 1] + cfg.qu_setpoint_step, *cfg.qu_setpoint_clip)
+            Floc_sp_delta[i] = Floc_sp_delta[i - 1]
         elif floc_low:
-            action = "INCREASE_FLOC" if (rng.random() < 0.85) else "DECREASE_FLOC"
+            OperatorAction[i] = "INCREASE_FLOC"
+            Floc_sp_delta[i] = np.clip(Floc_sp_delta[i - 1] + cfg.floc_setpoint_step, *cfg.floc_setpoint_clip)
+            Qu_sp_delta[i] = Qu_sp_delta[i - 1]
         else:
-            if rng.random() < 0.94:
-                continue
-            action = rng.choice(
-                ["INCREASE_FLOC", "INCREASE_UF", "DECREASE_FLOC", "DECREASE_UF"],
-                p=[0.45, 0.35, 0.10, 0.10],
-            )
+            # sometimes do nothing or minor tweaks
+            if rng2.random() < 0.85:
+                Qu_sp_delta[i] = Qu_sp_delta[i - 1]
+                Floc_sp_delta[i] = Floc_sp_delta[i - 1]
+            else:
+                OperatorAction[i] = rng2.choice(["INCREASE_UF", "INCREASE_FLOC"], p=[0.6, 0.4])
+                if OperatorAction[i] == "INCREASE_UF":
+                    Qu_sp_delta[i] = np.clip(Qu_sp_delta[i - 1] + 0.5 * cfg.qu_setpoint_step, *cfg.qu_setpoint_clip)
+                    Floc_sp_delta[i] = Floc_sp_delta[i - 1]
+                else:
+                    Floc_sp_delta[i] = np.clip(Floc_sp_delta[i - 1] + 0.5 * cfg.floc_setpoint_step, *cfg.floc_setpoint_clip)
+                    Qu_sp_delta[i] = Qu_sp_delta[i - 1]
 
-        OperatorAction[i] = action
-        duration = rng.integers(int(0.33 * points_per_hour), int(1.0 * points_per_hour) + 1)
-        j0, j1 = i, min(n, i + duration)
+        # small relaxation of setpoints in AUTO to avoid drifting forever
+        if ControlMode[i] == "AUTO":
+            Qu_sp_delta[i] = 0.98 * Qu_sp_delta[i]
+            Floc_sp_delta[i] = 0.98 * Floc_sp_delta[i]
 
-        if action == "INCREASE_UF":
-            action_penalty[j0:j1] += rng.uniform(3, 10)
-        elif action == "DECREASE_UF":
-            action_penalty[j0:j1] += rng.uniform(0, 3)
-        elif action == "INCREASE_FLOC":
-            action_penalty[j0:j1] -= rng.uniform(1, 6)
-        elif action == "DECREASE_FLOC":
-            action_penalty[j0:j1] += rng.uniform(1, 7)
+    # forward-fill setpoints (piecewise constant)
+    Qu_sp_delta = pd.Series(Qu_sp_delta).replace(0.0, np.nan).ffill().fillna(0.0).to_numpy()
+    Floc_sp_delta = pd.Series(Floc_sp_delta).replace(0.0, np.nan).ffill().fillna(0.0).to_numpy()
 
-    # ---------------------------------------------------------------------
-    # Stress components (for turbidity only)
-    # ---------------------------------------------------------------------
+    # ------------------ Apply operator setpoints to manipulated variables ------------------
+    Qu = np.clip(Qu_base + Qu_sp_delta, 60, 500)
+    Floc_gpt = np.clip(Floc_gpt_base + Floc_sp_delta, 3, 45)
+    FlocEffective_gpt = Floc_gpt * FlocActivity_factor
+
+    # Overfloc rheology penalty (if dose above max_effect)
+    floc_excess = np.clip(Floc_gpt - cfg.floc_max_effect_gpt, 0.0, 20.0) / 20.0
+    floc_rheo_penalty = 1.0 + cfg.overfloc_ys_gain * floc_excess
+
+    UF_YieldStress_Pa = 4.5 * dens_term * clay_amp * fines_amp * floc_rheo_penalty + rng.normal(0, 0.6, n)
+    UF_YieldStress_Pa = np.clip(UF_YieldStress_Pa, 0.5, 60.0)
+
+    # Recompute torque proxy with final YS (this is what operator sees)
+    ys = UF_YieldStress_Pa
+    ys_gate = np.clip((ys - cfg.ys_limit_Pa) / 20.0, 0.0, 1.0)
+    Bogging_factor = 1.0 + 0.25 * Clay_idx * ys_gate
+    RakeTorque_kNm = (0.35 * ys + 2.0 * bed) * Bogging_factor + rng.normal(0, cfg.torque_noise_kNm, n)
+    RakeTorque_kNm = np.clip(RakeTorque_kNm, 0.0, cfg.torque_clip_kNm)
+    RakeTorque_pct = 100.0 * RakeTorque_kNm / cfg.torque_rated_kNm
+
+    # ------------------ Stress components for turbidity ------------------
     fines_c = normalize_01(PSD)
     load_c = normalize_01(solids_load)
     var_c = normalize_01(rolling_std(Qf_total, window=12) + rolling_std(Sol_f, window=12))
 
     floc_need2 = 8 + 16 * PSD + 10 * load_c
-    floc_deficit = np.clip((floc_need2 - Floc) / 25.0, 0.0, 1.0)
-
+    floc_deficit = np.clip((floc_need2 - FlocEffective_gpt) / 25.0, 0.0, 1.0)
     floc_c = floc_deficit
+
     uf_c = normalize_01((1.0 - UF_capacity) + np.clip((220 - Qu) / 220.0, 0, 1))
 
-    w = np.array([0.18, 0.22, 0.12, 0.22, 0.26])
+    # Carryover trade-off: pushing UF increases turbidity slightly
+    carryover_penalty = cfg.carryover_gain_NTU * np.clip(Qu_sp_delta, 0.0, 200.0)
+
+    w = np.array([0.18, 0.20, 0.12, 0.26, 0.24])
     stress = w[0] * fines_c + w[1] * load_c + w[2] * var_c + w[3] * floc_c + w[4] * uf_c
     stress += np.where(regime == "CLAY", 0.03 * fines_c, 0.0)
     stress += np.where(regime == "UF", 0.03 * uf_c, 0.0)
-    stress += np.where(regime == "FLOC", 0.03 * floc_c, 0.0)
+    stress += np.where(FlocPrepFail_On == 1, 0.03 * floc_c, 0.0)
     stress = np.clip(stress, 0.0, 1.0)
 
-    # Turbidity (clean) with deadband
-    lag6 = np.roll(stress, 6)
-    lag6[:6] = lag6[6]
-    lag12 = np.roll(stress, 12)
-    lag12[:12] = lag12[12]
-
+    lag6 = np.roll(stress, 6); lag6[:6] = lag6[6]
+    lag12 = np.roll(stress, 12); lag12[:12] = lag12[12]
     stress_term = np.clip(0.65 * lag6 + 0.35 * lag12, 0.0, 1.0)
     effective = np.clip((stress_term - cfg.deadband) / (1.0 - cfg.deadband), 0.0, 1.0)
 
@@ -419,10 +466,9 @@ def simulate_clean(cfg: SimConfig) -> tuple[pd.DataFrame, dict]:
     noise = rng.normal(0, 3.0, n)
 
     def turb_with_scale(scale: float) -> np.ndarray:
-        t = base_turb + scale * (effective ** cfg.turb_power) + action_penalty + noise
+        t = base_turb + scale * (effective ** cfg.turb_power) + carryover_penalty + noise
         return np.clip(t, 5.0, cfg.turb_max)
 
-    # Calibrate scale on CLEAN turbidity
     lo, hi = 0.0, float(cfg.scale_search_hi)
     best_scale = 0.0
     for _ in range(26):
@@ -431,7 +477,6 @@ def simulate_clean(cfg: SimConfig) -> tuple[pd.DataFrame, dict]:
         ev = sustained_above(t, cfg.event_limit_NTU, cfg.sustain_points).astype(int)
         rate = float(ev.mean())
         best_scale = mid
-
         if abs(rate - cfg.target_event_rate) <= cfg.target_tolerance:
             break
         if rate < cfg.target_event_rate:
@@ -442,46 +487,105 @@ def simulate_clean(cfg: SimConfig) -> tuple[pd.DataFrame, dict]:
     turb_clean = turb_with_scale(float(best_scale))
     event_now = sustained_above(turb_clean, cfg.event_limit_NTU, cfg.sustain_points).astype(int)
 
-    dominant = np.array(["CLAY", "UF", "FLOC"], dtype=object)[
+    # ------------------ Diagnosis / event typing ------------------
+    dominant_raw = np.array(["CLAY", "UF", "FLOC"], dtype=object)[
         np.argmax(np.vstack([fines_c, uf_c, floc_c]).T, axis=1)
     ]
-    event_type = np.array(["NONE"] * n, dtype=object)
-    event_type[event_now == 1] = dominant[event_now == 1]
+    event_type_raw = np.array(["NONE"] * n, dtype=object)
+    event_type_raw[event_now == 1] = dominant_raw[event_now == 1]
+
+    event_type = event_type_raw.copy()
+    ev_mask = (event_now == 1)
+
+    uf_override = ev_mask & (regime == "UF") & (uf_c > cfg.event_type_override_th_uf)
+    event_type[uf_override] = "UF"
+
+    floc_override = ev_mask & (FlocPrepFail_On == 1) & (floc_c > cfg.event_type_override_th_floc)
+    event_type[floc_override] = "FLOC"
+
+    # ------------------ Playbook recommendation (heuristic) ------------------
+    # Provide a recommended action and a simple trade-off annotation.
+    RecommendedAction = np.array(["NONE"] * n, dtype=object)
+    ExpectedTradeoff = np.array([""] * n, dtype=object)
+    ActionScore_turb = np.zeros(n, dtype=float)
+    ActionScore_torque = np.zeros(n, dtype=float)
+
+    for i in range(n):
+        if turb_clean[i] < 60 and RakeTorque_pct[i] < 80 and bed[i] < 2.4:
+            continue
+
+        # if crisis is floc-driven -> recommend floc
+        if (FlocPrepFail_On[i] == 1) or (floc_c[i] > 0.55):
+            RecommendedAction[i] = "CHECK_FLOC_PREP_INCREASE_FLOC"
+            ExpectedTradeoff[i] = "↓turbidity, possible ↑YS/↑torque if overdosed"
+            ActionScore_turb[i] = +0.8
+            ActionScore_torque[i] = -0.2
+        # if UF constrained -> recommend increase UF (trade-off carryover)
+        elif (regime[i] == "UF") or (uf_c[i] > 0.60) or (bed[i] > 2.7):
+            RecommendedAction[i] = "INCREASE_UF_WATCH_CARRYOVER"
+            ExpectedTradeoff[i] = "↓bed/↓torque, possible ↑turbidity via carryover"
+            ActionScore_turb[i] = -0.2
+            ActionScore_torque[i] = +0.7
+        # if clay/fines high -> recommend dilution or floc optimization
+        elif (regime[i] == "CLAY") or (Clay_idx[i] > 0.65):
+            RecommendedAction[i] = "START_DILUTION_AND_OPTIMIZE_FLOC"
+            ExpectedTradeoff[i] = "↓YS/↓torque, likely ↓turbidity, but ↑water use"
+            ActionScore_turb[i] = +0.6
+            ActionScore_torque[i] = +0.5
+        else:
+            RecommendedAction[i] = "MONITOR_AND_TUNE"
+            ExpectedTradeoff[i] = "small adjustments"
+            ActionScore_turb[i] = +0.1
+            ActionScore_torque[i] = +0.1
+
+    # ------------------ Water recovery proxy ------------------
+    solids_out_proxy = Qu * (Sol_u / 100.0)
+    solids_in_proxy = Qf_total * (Sol_f / 100.0)
+    water_recovery_proxy = 1.0 - (solids_out_proxy / np.maximum(solids_in_proxy, 1e-6))
+    water_recovery_proxy = np.clip(water_recovery_proxy, -1.0, 1.0)
 
     df = pd.DataFrame(
         {
             "timestamp": index,
-            # Feed flows (explicit)
             "Qf_pulp_m3h": Qf_pulp,
             "Qf_dilution_m3h": Qf_dilution,
             "Qf_total_m3h": Qf_total,
-            # Backward-compatible SCADA-like tag for feed to thickener
             "Qf_m3h": Qf_total,
-            # Feed solids after dilution mixing
             "Solids_f_pct": Sol_f,
-            # Explicit dilution action
+            "Feedwell_Solids_pct": Feedwell_Solids_pct,
             "FeedDilution_On": FeedDilution_On,
             "FeedDilution_factor": FeedDilution_factor,
-            # Process / control
             "PSD_fines_idx": PSD,
             "Clay_pct": Clay_pct,
             "Clay_idx": Clay_idx,
-            "Floc_gpt": Floc,
+            "Floc_gpt": Floc_gpt,
+            "FlocActivity_factor": FlocActivity_factor,
+            "FlocEffective_gpt": FlocEffective_gpt,
+            "FlocPrepFail_On": FlocPrepFail_On,
             "UF_capacity_factor": UF_capacity,
+            "Qu_base_m3h": Qu_base,
+            "Qu_sp_delta_m3h": Qu_sp_delta,
             "Qu_m3h": Qu,
+            "Floc_sp_delta_gpt": Floc_sp_delta,
             "Solids_u_pct": Sol_u,
             "BedLevel_m": bed,
             "UF_YieldStress_Pa": UF_YieldStress_Pa,
-            "RakeTorque_kNm": rake_kNm,
-            "RakeTorque_pct": torque_pct,
+            "Bogging_factor": Bogging_factor,
+            "RakeTorque_kNm": RakeTorque_kNm,
+            "RakeTorque_pct": RakeTorque_pct,
             "Overflow_Turb_NTU_clean": turb_clean,
-            "Overflow_Turb_NTU": turb_clean,  # measured (corrupted later)
-            "ControlMode": control_mode,
+            "Overflow_Turb_NTU": turb_clean,
+            "ControlMode": ControlMode,
             "OperatorAction": OperatorAction,
-            # constants and labels
+            "RecommendedAction": RecommendedAction,
+            "ExpectedTradeoff": ExpectedTradeoff,
+            "ActionScore_turb": ActionScore_turb,
+            "ActionScore_torque": ActionScore_torque,
+            "WaterRecovery_proxy": water_recovery_proxy,
             "spec_limit_NTU": cfg.spec_limit_NTU,
             "event_limit_NTU": cfg.event_limit_NTU,
             "event_now": event_now,
+            "event_type_raw": event_type_raw,
             "event_type": event_type,
             "Regime": regime,
         }
@@ -491,14 +595,12 @@ def simulate_clean(cfg: SimConfig) -> tuple[pd.DataFrame, dict]:
 
     debug = {
         "deadband": cfg.deadband,
-        "sustain_points": cfg.sustain_points,
-        "effective_q50": float(np.quantile(effective, 0.50)),
-        "effective_q95": float(np.quantile(effective, 0.95)),
-        "effective_q99": float(np.quantile(effective, 0.99)),
         "scale": float(best_scale),
         "event_rate": float(df["event_now"].mean()),
-        "dilution_on_rate": float(df["FeedDilution_On"].mean()),
-        "qf_total_q95": float(np.quantile(Qf_total, 0.95)),
+        "manual_rate": float((df["ControlMode"] == "MANUAL").mean()),
+        "floc_prep_fail_on_rate": float(df["FlocPrepFail_On"].mean()),
+        "torque_pct_p95": float(np.nanquantile(df["RakeTorque_pct"], 0.95)),
+        "turb_clean_p50": float(np.nanquantile(df["Overflow_Turb_NTU_clean"], 0.50)),
     }
     return df, debug
 
@@ -511,13 +613,11 @@ def inject_failures(cfg: SimConfig, df: pd.DataFrame) -> pd.DataFrame:
     points_per_day = int(24 * 60 / cfg.freq_min)
     points_per_hour = int(60 / cfg.freq_min)
 
-    # Only corrupt measured turbidity and SCADA-like tags, never the clean truth
     tags = ["Qf_m3h", "Solids_u_pct", "Overflow_Turb_NTU"]
 
     for tag in tags:
         x = out[tag].to_numpy().copy()
 
-        # spikes
         expected_spikes = int(cfg.spikes_per_day_per_tag * cfg.days)
         idx = rng.integers(0, n, size=expected_spikes)
         for i in idx:
@@ -528,7 +628,6 @@ def inject_failures(cfg: SimConfig, df: pd.DataFrame) -> pd.DataFrame:
             else:
                 x[i] += rng.uniform(-40, 40)
 
-        # stuck
         stuck_segments = int(cfg.stuck_events_per_30d_per_tag * (cfg.days / 30.0))
         for _ in range(stuck_segments):
             start = rng.integers(0, n - 2 * points_per_hour)
@@ -536,7 +635,6 @@ def inject_failures(cfg: SimConfig, df: pd.DataFrame) -> pd.DataFrame:
             dur = int(dur_min / cfg.freq_min)
             x[start:start + dur] = x[start]
 
-        # drift
         drift_segments = int(cfg.drift_events_per_90d_per_tag)
         for _ in range(drift_segments):
             start = rng.integers(int(0.2 * n), int(0.8 * n))
@@ -549,12 +647,10 @@ def inject_failures(cfg: SimConfig, df: pd.DataFrame) -> pd.DataFrame:
             else:
                 x[start:end] += mag
 
-        # missing
         missing_n = int(cfg.missing_rate_per_tag * n)
         miss_idx = rng.choice(np.arange(n), size=missing_n, replace=False)
         x[miss_idx] = np.nan
 
-        # clip
         if tag == "Qf_m3h":
             x = np.clip(x, 0.0, 1200.0)
         elif tag == "Solids_u_pct":
