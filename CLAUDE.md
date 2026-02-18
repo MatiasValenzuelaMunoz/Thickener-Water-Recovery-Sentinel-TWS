@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ML goals:
 1. **Early warning**: binary forecast of sustained turbidity crisis (>100 NTU clean, ≥20 min) at 30-minute horizon (`target_event_30m`)
-2. **Diagnosis**: classify cause mode — CLAY / UF / FLOC
+2. **Diagnosis**: classify cause mode — CLAY / UF
 3. **Sensor health**: detect instrument failures on measured tags
 4. **Prescriptive playbook**: recommend operator actions with trade-offs
 
@@ -51,7 +51,7 @@ The dataset is **not committed** (gitignored). It must be generated before runni
 - `event_now` — 1 if sustained `>event_limit_NTU` CLEAN for ≥4 points (20 min)
 - `target_event_30m` — `event_now` shifted −6 points (30 min ahead); the main prediction target
 
-**Operational regimes** (`Regime` column): `NORMAL`, `CLAY`, `UF` — campaigns injected on days 14–28 and 28–42 respectively. FLOC failures are short incidents scattered independently.
+**Operational regimes** (`Regime` column): `NORMAL`, `CLAY`, `UF` — campaigns injected on days 14–28 and 28–42 respectively.
 
 ## Simulation Architecture (`src/simulate_fixed.py`)
 
@@ -78,3 +78,4 @@ The simulator runs in two passes: first a base pass to estimate bed/torque, then
 The `bitacora/` directory contains decision rationale in Markdown. Read these before modifying simulation parameters:
 - `01_dataset_sintetico_calibracion_Version1.md` — label definitions and realism criteria
 - `05_bitacora.md` — latest calibration run (Corrida C, deadband=0.30), selected configuration
+- `06_descarte_floc.md` — decision to remove FLOC mechanism; diagnosis simplified to CLAY vs UF
