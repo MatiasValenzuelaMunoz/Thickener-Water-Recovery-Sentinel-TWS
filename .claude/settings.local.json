@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(source:*)",
+      "Bash(PYTHONIOENCODING=utf-8 jupyter nbconvert:*)",
+      "Bash(pip install:*)",
+      "Bash(.venv/Scripts/python.exe:*)",
+      "Bash(PYTHONIOENCODING=utf-8 .venv/Scripts/python.exe:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
+    ]
+  }
+}
