@@ -8,7 +8,8 @@
       "Bash(PYTHONIOENCODING=utf-8 .venv/Scripts/python.exe:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(dir:*)"
     ]
   }
 }
