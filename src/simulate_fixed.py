@@ -49,9 +49,11 @@ class SimConfig:
     target_event_rate: float = 0.05
     target_tolerance: float = 0.006
 
-    # campaigns (days)
-    clay_days: int = 14
-    uf_days: int = 14
+    # Múltiples episodios distribuidos en los 90 días (start_day, duration_days)
+    # CLAY: planificación de mina → episodios más largos y espaciados
+    # UF: falla mecánica → episodios más cortos y abruptos
+    clay_episodes: tuple = ((10, 5), (38, 6), (65, 5))   # 16 días total
+    uf_episodes:   tuple = ((20, 4), (52, 4), (78, 4))   # 12 días total
 
     # turbidity response
     base_turb_min: float = 20.0
@@ -144,15 +146,12 @@ def day_to_idx(day: int, cfg: SimConfig) -> int:
 
 def build_regime_schedule(cfg: SimConfig, n: int) -> np.ndarray:
     regime = np.array(["NORMAL"] * n, dtype=object)
-    start_day = 14
-    clay_start = start_day
-    uf_start = clay_start + cfg.clay_days
-
-    clay_i0, clay_i1 = day_to_idx(clay_start, cfg), day_to_idx(clay_start + cfg.clay_days, cfg)
-    uf_i0, uf_i1 = day_to_idx(uf_start, cfg), day_to_idx(uf_start + cfg.uf_days, cfg)
-
-    regime[clay_i0:clay_i1] = "CLAY"
-    regime[uf_i0:uf_i1] = "UF"
+    for start, dur in cfg.clay_episodes:
+        i0, i1 = day_to_idx(start, cfg), day_to_idx(start + dur, cfg)
+        regime[i0:i1] = "CLAY"
+    for start, dur in cfg.uf_episodes:
+        i0, i1 = day_to_idx(start, cfg), day_to_idx(start + dur, cfg)
+        regime[i0:i1] = "UF"
     return regime
 
 
@@ -253,11 +252,14 @@ def simulate_clean(cfg: SimConfig) -> tuple[pd.DataFrame, dict]:
     if uf_mask.any():
         points_per_hour = int(60 / cfg.freq_min)
         uf_idx = np.where(uf_mask)[0]
-        for _ in range(int(cfg.uf_days * 3.0)):
-            start = rng.integers(uf_idx[0], uf_idx[-1])
+        total_uf_days = sum(dur for _, dur in cfg.uf_episodes)
+        n_dropouts = int(total_uf_days * 3.0)
+        for _ in range(n_dropouts):
+            start = int(rng.choice(uf_idx))          # solo índices UF reales
             duration = rng.integers(2 * points_per_hour, 4 * points_per_hour + 1)
             cap = rng.uniform(0.70, 0.92)
-            UF_capacity[start:start + duration] = np.minimum(UF_capacity[start:start + duration], cap)
+            UF_capacity[start:start + duration] = np.minimum(
+                UF_capacity[start:start + duration], cap)
 
     Qu_base = np.clip((0.35 * Qf_total + rng.normal(0, 18, n)) * UF_capacity, 80, 450)
 
