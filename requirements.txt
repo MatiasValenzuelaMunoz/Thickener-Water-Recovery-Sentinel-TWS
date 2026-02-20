@@ -5,4 +5,7 @@ matplotlib
 plotly
 statsmodels
 scikit-learn
+lightgbm
+shap
+imbalanced-learn
 dataclasses; python_version < '3.7'
