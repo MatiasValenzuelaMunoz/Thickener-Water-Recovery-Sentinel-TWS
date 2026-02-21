@@ -101,7 +101,7 @@ class SimConfig:
 
 
 def _default_drift_magnitude() -> Dict[str, float]:
-    return {"Qf_m3h": 0.08, "Solids_u_pct": -0.04, "Overflow_Turb_NTU": -10.0}
+    return {"Qf_m3h": 0.08, "Solids_u_pct": -0.04, "Overflow_Turb_NTU": -10.0, "pH_feed": 0.3}
 
 
 def rolling_std(x: np.ndarray, window: int) -> np.ndarray:
@@ -242,8 +242,35 @@ def simulate_clean(cfg: SimConfig) -> tuple[pd.DataFrame, dict]:
     solids_load = Qf_total * (Sol_f / 100.0)
     load_norm = normalize_01(solids_load)
 
-    # ------------------ Floc dose (process variable; no prep-fail incidents) ------------------
-    floc_need = 12 + 18 * PSD + 14 * load_norm + 10 * Clay_idx + rng.normal(0, 1.2, n)
+    # ------------------ pH (causal: drive floc effectiveness → stress → turbidity) -----------
+    # Base: circuito alcalino post-flotación Cu/Mo (cal); óptimo PAM aniónico: 8–9
+    # CLAY: arcilla consume alcalinidad → pH sube a 9.5–10.5 (fuera del rango óptimo)
+    # Respuesta operador: aumentar dosis de floculante y/o ajustar dosificación de cal
+    pH_base_normal  = float(rng.uniform(8.8, 9.3))
+    ph_uf_noise     = rng.normal(0, 0.05, n)
+    ph_normal_noise = rng.normal(0, 0.04, n)
+    pH_target = np.where(
+        regime == "CLAY",
+        pH_base_normal + 0.6 * Clay_idx + 0.4 * PSD,   # sube por encima del óptimo
+        np.where(regime == "UF", pH_base_normal + ph_uf_noise, pH_base_normal + ph_normal_noise),
+    )
+    _rng_ph = np.random.default_rng(cfg.seed + 13)
+    pH_clean = np.zeros(n)
+    pH_clean[0] = pH_base_normal
+    for i in range(1, n):
+        pH_clean[i] = 0.985 * pH_clean[i - 1] + 0.015 * pH_target[i] + _rng_ph.normal(0, 0.03)
+    pH_clean = np.clip(pH_clean, 7.5, 12.0)
+
+    # Floc_effectiveness (latente): Gaussiana centrada en pH óptimo 8.5
+    # pH 8.5 → 1.00 | pH 9.5 → 0.88 | pH 10.5 → 0.61 | pH 11.0 → 0.46
+    pH_dev = np.abs(pH_clean - 8.5)
+    floc_effectiveness = np.clip(np.exp(-0.5 * (pH_dev / 1.0) ** 2), 0.3, 1.0)
+
+    # ------------------ Floc dose (process variable) ------------------------------------------
+    # pH > 9.0 → operador aumenta dosis o cambia polímero (hasta +6 g/t en episodio severo)
+    pH_off_optimal = np.clip(pH_clean - 9.0, 0.0, 3.0)
+    pH_floc_correction = 6.0 * (pH_off_optimal / 3.0)
+    floc_need = 12 + 18 * PSD + 14 * load_norm + 10 * Clay_idx + pH_floc_correction + rng.normal(0, 1.2, n)
     Floc_gpt = np.clip(floc_need + rng.normal(0, 1.5, n), 5, 35)
 
     # ------------------ UF capacity + base Qu ------------------
@@ -363,6 +390,9 @@ def simulate_clean(cfg: SimConfig) -> tuple[pd.DataFrame, dict]:
     # ------------------ Apply operator setpoints to manipulated variables ------------------
     Qu = np.clip(Qu_base + Qu_sp_delta, 60, 500)
 
+    # Flujo de overflow: balance volumétrico + ruido de medición (~1% del rango típico)
+    Qo = np.clip(Qf_total - Qu + rng.normal(0, 5.0, n), 50.0, 800.0)
+
     UF_YieldStress_Pa = 4.5 * dens_term * clay_amp * fines_amp + rng.normal(0, 0.6, n)
     UF_YieldStress_Pa = np.clip(UF_YieldStress_Pa, 0.5, 60.0)
 
@@ -384,10 +414,13 @@ def simulate_clean(cfg: SimConfig) -> tuple[pd.DataFrame, dict]:
     # Carryover trade-off: pushing UF increases turbidity slightly
     carryover_penalty = cfg.carryover_gain_NTU * np.clip(Qu_sp_delta, 0.0, 200.0)
 
-    # Weights renormalized after removing floc component: (fines, load, var, uf)
-    w = np.array([0.24, 0.26, 0.15, 0.35])
-    stress = w[0] * fines_c + w[1] * load_c + w[2] * var_c + w[3] * uf_c
-    stress += np.where(regime == "CLAY", 0.03 * fines_c, 0.0)
+    # floc_c: estrés por degradación del floculante (pH fuera del rango óptimo)
+    floc_c = normalize_01(1.0 - floc_effectiveness)  # 0 = floc OK; 1 = floc muy degradado
+
+    # Pesos: fines=0.22, load=0.24, var=0.13, uf=0.31, floc=0.10  (suma=1.0)
+    w = np.array([0.22, 0.24, 0.13, 0.31, 0.10])
+    stress = w[0] * fines_c + w[1] * load_c + w[2] * var_c + w[3] * uf_c + w[4] * floc_c
+    stress += np.where(regime == "CLAY", 0.01 * fines_c, 0.0)  # reducido: pH ya captura CLAY
     stress += np.where(regime == "UF", 0.03 * uf_c, 0.0)
     stress = np.clip(stress, 0.0, 1.0)
 
@@ -463,11 +496,13 @@ def simulate_clean(cfg: SimConfig) -> tuple[pd.DataFrame, dict]:
             ActionScore_turb[i] = +0.1
             ActionScore_torque[i] = +0.1
 
-    # ------------------ Water recovery proxy ------------------
-    solids_out_proxy = Qu * (Sol_u / 100.0)
-    solids_in_proxy = Qf_total * (Sol_f / 100.0)
-    water_recovery_proxy = 1.0 - (solids_out_proxy / np.maximum(solids_in_proxy, 1e-6))
-    water_recovery_proxy = np.clip(water_recovery_proxy, -1.0, 1.0)
+    # ------------------ Water recovery (fórmula corregida) -----------------------------------
+    # WR = fracción del agua de alimentación recuperada en el underflow (UF denso → más agua)
+    # Qw ≈ Qflow × (1 − Solids_pct/100) — aproximación válida para concentraciones < 70%
+    Qw_feed = Qf_total * (1.0 - Sol_f / 100.0)
+    Qw_uf   = Qu       * (1.0 - Sol_u / 100.0)
+    water_recovery_proxy = Qw_uf / np.maximum(Qw_feed, 1.0)
+    water_recovery_proxy = np.clip(water_recovery_proxy, 0.0, 1.0)
 
     df = pd.DataFrame(
         {
@@ -484,10 +519,14 @@ def simulate_clean(cfg: SimConfig) -> tuple[pd.DataFrame, dict]:
             "Clay_pct": Clay_pct,
             "Clay_idx": Clay_idx,
             "Floc_gpt": Floc_gpt,
+            "pH_clean": pH_clean,          # ground truth (como Overflow_Turb_NTU_clean)
+            "pH_feed": pH_clean,           # medido; inject_failures agrega fallas de electrodo
+            "Floc_effectiveness": floc_effectiveness,  # latente — no usar como feature
             "UF_capacity_factor": UF_capacity,
             "Qu_base_m3h": Qu_base,
             "Qu_sp_delta_m3h": Qu_sp_delta,
             "Qu_m3h": Qu,
+            "Qo_m3h": Qo,              # flujo de overflow (balance volumétrico)
             "Solids_u_pct": Sol_u,
             "BedLevel_m": bed,
             "UF_YieldStress_Pa": UF_YieldStress_Pa,
@@ -533,7 +572,7 @@ def inject_failures(cfg: SimConfig, df: pd.DataFrame) -> pd.DataFrame:
     points_per_day = int(24 * 60 / cfg.freq_min)
     points_per_hour = int(60 / cfg.freq_min)
 
-    tags = ["Qf_m3h", "Solids_u_pct", "Overflow_Turb_NTU"]
+    tags = ["Qf_m3h", "Solids_u_pct", "Overflow_Turb_NTU", "pH_feed"]
 
     for tag in tags:
         x = out[tag].to_numpy().copy()
@@ -545,6 +584,8 @@ def inject_failures(cfg: SimConfig, df: pd.DataFrame) -> pd.DataFrame:
                 x[i] += rng.uniform(-250, 250)
             elif tag == "Solids_u_pct":
                 x[i] += rng.uniform(-15, 15)
+            elif tag == "pH_feed":
+                x[i] += rng.uniform(-0.8, 0.8)   # artefactos de calibración del electrodo
             else:
                 x[i] += rng.uniform(-40, 40)
 
@@ -575,6 +616,8 @@ def inject_failures(cfg: SimConfig, df: pd.DataFrame) -> pd.DataFrame:
             x = np.clip(x, 0.0, 1200.0)
         elif tag == "Solids_u_pct":
             x = np.clip(x, 0.0, 100.0)
+        elif tag == "pH_feed":
+            x = np.clip(x, 6.0, 12.0)   # rango físico del electrodo
         else:
             x = np.clip(x, 0.0, cfg.turb_max)
 
