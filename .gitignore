@@ -20,3 +20,8 @@ outputs/
 .DS_Store
 Thumbs.db
 
+# reports — exported files and personal docs
+reports/*.html
+reports/*.pdf
+reports/linkedin_summary.md
+
