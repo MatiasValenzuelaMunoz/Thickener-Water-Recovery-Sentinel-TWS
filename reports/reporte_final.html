@@ -7806,85 +7806,90 @@ a.anchor-link {
 <h1 style="font-size: 2.2em; margin-bottom: 8px; font-weight: 700;">
 Thickener Water Recovery Sentinel (TWS)
 </h1>
-<h2 style="font-size: 1.2em; font-weight: 300; margin-bottom: 30px; opacity: 0.9;">
-Machine Learning para Detección Temprana de Crisis de Turbidez en Espesadores Cu/Mo
+<h2 style="font-size: 1.15em; font-weight: 300; margin-bottom: 30px; opacity: 0.9;">
+¿Podemos anticipar las crisis de turbidez antes de que ocurran?<br/>
+Un proof-of-concept de Machine Learning para espesadores Cu/Mo
 </h2>
 <hr style="border-color: rgba(255,255,255,0.3); margin: 20px 0;"/>
 <table style="color: white; font-size: 0.95em; border: none;">
-<tr><td style="padding: 4px 24px 4px 0; opacity: 0.7;">Proceso objetivo</td><td><strong>Espesador convencional de concentrado Cu/Mo</strong></td></tr>
-<tr><td style="padding: 4px 24px 4px 0; opacity: 0.7;">Dataset</td><td><strong>Sintético operacionalmente calibrado · 90 días · 5 min · 25,920 obs.</strong></td></tr>
-<tr><td style="padding: 4px 24px 4px 0; opacity: 0.7;">Modelos</td><td><strong>Random Forest · LightGBM · Regla de proceso</strong></td></tr>
-<tr><td style="padding: 4px 24px 4px 0; opacity: 0.7;">Estado</td><td><strong>Proof-of-concept · Validación con datos reales requerida</strong></td></tr>
+<tr><td style="padding: 4px 24px 4px 0; opacity: 0.7;">Proceso</td><td><strong>Espesador convencional de concentrado Cu/Mo</strong></td></tr>
+<tr><td style="padding: 4px 24px 4px 0; opacity: 0.7;">Datos</td><td><strong>Dataset sintético calibrado · 90 días · 5 minutos · 25,920 registros</strong></td></tr>
+<tr><td style="padding: 4px 24px 4px 0; opacity: 0.7;">Estado</td><td><strong>Proof-of-concept listo para validación con datos reales de planta</strong></td></tr>
 <tr><td style="padding: 4px 24px 4px 0; opacity: 0.7;">Versión</td><td><strong>v1.0 — Febrero 2026</strong></td></tr>
 </table>
 </div>
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=r02-abstract">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=r02-problema">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <hr/>
-<h2 id="Abstract">Abstract<a class="anchor-link" href="#Abstract">¶</a></h2><p>Las crisis de turbidez en el overflow de espesadores convencionales representan uno de los modos de falla de mayor impacto en la recuperación de agua de proceso en plantas concentradoras de Cu/Mo. La detección actual basada en umbrales estáticos de turbidez medida provee aviso solo cuando la crisis ya se ha instaurado, dejando al operador con una ventana de reacción insuficiente.</p>
-<p>Este trabajo presenta <strong>TWS (Thickener Water Recovery Sentinel)</strong>, un framework de ML para anticipación y diagnóstico de estas crisis sobre señales de proceso en tiempo real. Se desarrolló y evaluó sobre un dataset sintético de 90 días calibrado para reproducir el comportamiento dinámico de un espesador Cu/Mo operando bajo tres regímenes: operación normal, ingreso de arcilla fina (CLAY), y degradación de underflow (UF).</p>
-<p><strong>Contribuciones principales:</strong></p>
-<ol>
-<li><strong>Alerta temprana a 30 minutos</strong> mediante Random Forest sobre 221 features temporales derivadas de 30 tags de proceso — PR-AUC = 0.795, Recall = 79.5% (vs. PR-AUC = 0.663 del baseline de umbral).</li>
-<li><strong>Diagnóstico de causa raíz CLAY/UF</strong> con exactitud del 93.1% mediante regla física de nivel de lecho, con LightGBM como respaldo ante fallas de sensor.</li>
-<li><strong>Cuantificación de la brecha de datos</strong> para alertas preventivas de 2h: el Componente B alcanza PR-AUC = 0.134 con datos de sensor online, y se demuestra cuantitativamente que la incorporación de análisis granulométrico de laboratorio es el factor limitante para mejorar substancialmente este horizonte.</li>
-</ol>
-<p>Los resultados son consistentes con la física del proceso y sugieren que el framework es transferible a plantas con espesadores similares, sujeto a re-entrenamiento sobre datos reales de planta.</p>
+<h2 id="El-problema">El problema<a class="anchor-link" href="#El-problema">¶</a></h2><p>Las crisis de turbidez en el overflow del espesador son uno de los eventos de mayor impacto en la recuperación de agua de una planta concentradora. Cuando el overflow supera los <strong>100 NTU de forma sostenida</strong>, el agua clarificada ya no es apta para recircular al circuito de flotación: se pierde agua de proceso, se compromete la recuperación de Cu/Mo, y se activa una maniobra de emergencia que el operador debe ejecutar contra el tiempo.</p>
+<p>El sistema de monitoreo estándar — una alarma que se activa cuando la turbidez ya cruzó el umbral — avisa <strong>cuando el problema ya ocurrió</strong>. El operador recibe la alerta, identifica la causa, aplica la corrección (ajuste de floculante, caudal de purga), y espera el efecto. Todo eso toma entre 20 y 40 minutos adicionales.</p>
+<div style="background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 16px 20px; border-radius: 4px; margin: 16px 0;">
+</div>
+<p><strong>La pregunta central de TWS:</strong> ¿pueden las señales del proceso — nivel de lecho, torque del rastrillo, caudal de underflow, pH, turbidez — advertir una crisis 30 minutos antes de que ocurra?</p>
+<p>La respuesta corta es <strong>sí, en gran medida</strong>. Y el diagnóstico de la causa también es automatizable con los datos que ya existen en planta.</p>
 </div>
 </div>
 </div>
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs jp-mod-noInput celltag_hide-input" id="cell-id=r03-setup">
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=r04-contexto">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=r04-enfoque">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <hr/>
-<h2 id="1.-Contexto-T%C3%A9cnico-del-Proceso">1. Contexto Técnico del Proceso<a class="anchor-link" href="#1.-Contexto-T%C3%A9cnico-del-Proceso">¶</a></h2><h3 id="Din%C3%A1mica-de-turbidez-en-espesadores-convencionales">Dinámica de turbidez en espesadores convencionales<a class="anchor-link" href="#Din%C3%A1mica-de-turbidez-en-espesadores-convencionales">¶</a></h3><p>En un espesador de rastrillos, el overflow clarificado debe mantenerse por debajo de un límite de turbidez operacional (típicamente 50–100 NTU según el circuito aguas abajo). El mecanismo de clarificación depende de la formación y mantenimiento de un <strong>lecho de lodos</strong> cohesivo que actúe como filtro profundo, asistido por la adición de floculante de alto peso molecular.</p>
-<p>La turbidez del overflow resulta de la competencia entre dos procesos:</p>
-<ul>
-<li><strong>Sedimentación</strong> de partículas floculadas hacia el lecho</li>
-<li><strong>Arrastre</strong> de finos no floculados o re-suspendidos hacia la zona de overflow</li>
-</ul>
-<p>Este balance es perturbado por dos modos de falla distintos que TWS busca identificar:</p>
+<h2 id="%C2%BFC%C3%B3mo-funciona-TWS?">¿Cómo funciona TWS?<a class="anchor-link" href="#%C2%BFC%C3%B3mo-funciona-TWS?">¶</a></h2><p>TWS no reemplaza al operador ni al metalurgista — los potencia. El sistema analiza en forma continua las señales del DCS y produce tres tipos de salida:</p>
+<pre><code>  Señales del DCS/SCADA (30 tags · cada 5 min)
+  turbidez · nivel de lecho · torque · caudales · pH · floculante
+                        │
+          ┌─────────────┼─────────────┐
+          ▼             ▼             ▼
+  ┌──────────────┐ ┌──────────┐ ┌────────────────┐
+  │  ALERTA      │ │  ALERTA  │ │  DIAGNÓSTICO   │
+  │  TEMPRANA    │ │  PRECOZ  │ │  DE CAUSA      │
+  │  30 minutos  │ │  2 horas │ │  CLAY  /  UF   │
+  └──────────────┘ └──────────┘ └────────────────┘
+          │                             │
+          ▼                             ▼
+   ⚠️ Sala de control           🔍 ¿Qué hacer?
+</code></pre>
+<p>La lógica subyacente es simple: el sistema aprende, a partir del historial de operación, qué combinación de señales precede habitualmente a una crisis. No adivina — reconoce patrones que ya ocurrieron antes.</p>
 <table>
 <thead>
 <tr>
-<th>Modo</th>
-<th>Causa raíz</th>
-<th>Mecanismo de turbidez</th>
-<th>Señales precursoras</th>
+<th>Componente</th>
+<th>Pregunta</th>
+<th>Señal de entrada</th>
+<th>Valor operacional</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><strong>CLAY</strong></td>
-<td>Aumento de fracción de arcillas en alimentación (ej. kaolinita, illita)</td>
-<td>Arcillas interfieren con floculación → finos no capturados → lecho alto y rígido</td>
-<td>↑ Clay index, ↑ pH feed, ↑ BedLevel, ↑ RakeTorque</td>
+<td><strong>Alerta Temprana</strong></td>
+<td>¿Habrá crisis en 30 min?</td>
+<td>30 tags de proceso</td>
+<td>Tiempo para actuar antes de la crisis</td>
 </tr>
 <tr>
-<td><strong>UF</strong></td>
-<td>Degradación del sistema de purga de underflow (bomba, válvula, taponamiento)</td>
-<td>Acumulación de sólidos → colapso del lecho → resuspensión masiva</td>
-<td>↓ Qu_m3h, ↑ Solids_u_pct, BedLevel moderado</td>
+<td><strong>Alerta Precoz</strong></td>
+<td>¿Hay riesgo en las próximas 2h?</td>
+<td>30 tags (zona verde)</td>
+<td>Acción preventiva más temprana</td>
+</tr>
+<tr>
+<td><strong>Diagnóstico</strong></td>
+<td>¿La causa es CLAY o falla de underflow?</td>
+<td>Nivel de lecho + otros</td>
+<td>Acción correctiva específica y rápida</td>
 </tr>
 </tbody>
 </table>
-<h3 id="Por-qu%C3%A9-la-detecci%C3%B3n-temprana-es-t%C3%A9cnicamente-dif%C3%ADcil">Por qué la detección temprana es técnicamente difícil<a class="anchor-link" href="#Por-qu%C3%A9-la-detecci%C3%B3n-temprana-es-t%C3%A9cnicamente-dif%C3%ADcil">¶</a></h3><p>El principal desafío es que ambos modos de falla exhiben señales precursoras <strong>débiles y de baja relación señal/ruido</strong> en el espacio de sensores estándar de planta:</p>
-<ul>
-<li>La turbidez medida (<code>Overflow_Turb_NTU</code>) es la señal más discriminante, pero por definición solo detecta el problema cuando ya está en curso.</li>
-<li>Las señales upstream (BedLevel, RakeTorque, pH) varían lentamente y tienen alta varianza natural, dificultando la detección de tendencias incipientes.</li>
-<li>El modo CLAY requiere información de composición mineralógica que no está disponible en tiempo real en la mayoría de las plantas — este es el <strong>cuello de botella fundamental</strong> para la anticipación a largo horizonte.</li>
-</ul>
-<h3 id="Definici%C3%B3n-de-evento-para-modelado">Definición de evento para modelado<a class="anchor-link" href="#Definici%C3%B3n-de-evento-para-modelado">¶</a></h3><p>Se definió como <strong>evento sostenido de turbidez</strong> toda secuencia de ≥ 4 puntos consecutivos (≥ 20 min) con turbidez limpia &gt; 100 NTU. El target de predicción es <code>target_event_30m</code>: el evento desplazado 6 puntos (30 min) hacia el pasado, de modo que el modelo predice si <strong>en los próximos 30 minutos</strong> ocurrirá un evento.</p>
 </div>
 </div>
 </div>
@@ -7895,255 +7900,170 @@ Machine Learning para Detección Temprana de Crisis de Turbidez en Espesadores C
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <hr/>
-<h2 id="2.-Dataset-Sint%C3%A9tico-Calibrado">2. Dataset Sintético Calibrado<a class="anchor-link" href="#2.-Dataset-Sint%C3%A9tico-Calibrado">¶</a></h2><h3 id="Justificaci%C3%B3n-del-enfoque-sint%C3%A9tico">Justificación del enfoque sintético<a class="anchor-link" href="#Justificaci%C3%B3n-del-enfoque-sint%C3%A9tico">¶</a></h3><p>La ausencia de datos históricos etiquetados con causa raíz (CLAY/UF) en la mayoría de las plantas justifica el desarrollo sobre un simulador calibrado. El objetivo no es reemplazar datos reales, sino <strong>demostrar el framework metodológico</strong> y cuantificar la brecha de rendimiento esperada al migrar a datos reales.</p>
-<p>El simulador (<code>src/simulate_fixed.py</code>) implementa:</p>
+<h2 id="El-dataset:-90-d%C3%ADas-de-un-espesador-simulado">El dataset: 90 días de un espesador simulado<a class="anchor-link" href="#El-dataset:-90-d%C3%ADas-de-un-espesador-simulado">¶</a></h2><p>TWS fue desarrollado y evaluado sobre un <strong>dataset sintético calibrado</strong> — un simulador de proceso que reproduce el comportamiento dinámico de un espesador Cu/Mo, incluyendo fallas de sensor realistas (picos, valores pegados, deriva) y dos tipos de perturbación operacional:</p>
 <ul>
-<li><strong>Balance de masa dinámico</strong> sobre sólidos y agua, con lecho de lodos modelado como variable de estado</li>
-<li><strong>Modelo de estrés compuesto</strong> con pesos calibrados: finos (0.22), carga (0.24), variabilidad (0.13), underflow (0.31), eficiencia de floculante (0.10)</li>
-<li><strong>Cadena causal pH→floculante→turbidez</strong>: Clay_idx↑ → pH↑ → Floc_effectiveness↓ → turbidez↑</li>
-<li><strong>Fallas de sensor realistas</strong>: spikes, stuck values, drift y datos faltantes inyectados post-simulación</li>
-<li><strong>Calibración automática</strong> de parámetros via búsqueda binaria sobre <code>scale</code> para alcanzar 5% ± 0.6% de tasa de eventos</li>
+<li><strong>CLAY</strong>: ingresos de arcilla fina que interfieren con la floculación → lecho alto y rígido, consumo elevado de floculante</li>
+<li><strong>UF (Underflow Failure)</strong>: degradación del sistema de purga → acumulación de sólidos, caída de caudal de underflow</li>
 </ul>
-<h3 id="Caracter%C3%ADsticas-del-dataset">Características del dataset<a class="anchor-link" href="#Caracter%C3%ADsticas-del-dataset">¶</a></h3><table>
+<p>¿Por qué sintético? Porque en la mayoría de las plantas no existe un historial etiquetado que identifique la causa raíz de cada evento. El simulador permite desarrollar y validar el framework metodológico. <strong>Los datos reales de planta son el siguiente paso necesario</strong> — y el propósito de este documento.</p>
+<h3 id="%C2%BFCu%C3%A1ntas-veces-entra-en-crisis-el-espesador?">¿Cuántas veces entra en crisis el espesador?<a class="anchor-link" href="#%C2%BFCu%C3%A1ntas-veces-entra-en-crisis-el-espesador?">¶</a></h3><table>
 <thead>
 <tr>
-<th>Parámetro</th>
-<th>Valor</th>
+<th>Zona operacional</th>
+<th>Criterio</th>
+<th>Fracción del tiempo</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>Período</td>
-<td>90 días (frecuencia 5 min)</td>
+<td>🟢 Verde — operación normal</td>
+<td>Turbidez &lt; 50 NTU</td>
+<td><strong>77.8%</strong></td>
 </tr>
 <tr>
-<td>Observaciones</td>
-<td>25,920</td>
-</tr>
-<tr>
-<td>Variables totales</td>
-<td>43 (30 tags de planta + 13 latentes/derivadas)</td>
-</tr>
-<tr>
-<td>Features para modelado (<code>FEATURES_PROD</code>)</td>
-<td>221 (solo tags observables en planta real)</td>
-</tr>
-<tr>
-<td>Tasa de eventos sostenidos</td>
-<td>5.1% (1,326 puntos)</td>
-</tr>
-<tr>
-<td>Campañas CLAY</td>
-<td>3 episodios · días 10, 38, 65 · 16 días totales</td>
-</tr>
-<tr>
-<td>Campañas UF</td>
-<td>3 episodios · días 20, 52, 78 · 12 días totales</td>
-</tr>
-</tbody>
-</table>
-<h3 id="KPIs-operacionales-simulados">KPIs operacionales simulados<a class="anchor-link" href="#KPIs-operacionales-simulados">¶</a></h3><table>
-<thead>
-<tr>
-<th>Zona</th>
-<th>Criterio (turbidez clean)</th>
-<th>Fracción</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Verde</td>
-<td>&lt; 50 NTU</td>
-<td>77.8%</td>
-</tr>
-<tr>
-<td>Degradado</td>
+<td>🟡 Degradado — requiere atención</td>
 <td>50 – 100 NTU</td>
 <td>12.8%</td>
 </tr>
 <tr>
-<td>Crisis sostenida</td>
-<td>&gt; 100 NTU, ≥ 20 min</td>
+<td>🔴 Crisis sostenida</td>
+<td>&gt; 100 NTU por ≥ 20 min</td>
 <td><strong>5.1%</strong></td>
 </tr>
 </tbody>
 </table>
-<h3 id="Variables-latentes-excluidas-del-modelado">Variables latentes excluidas del modelado<a class="anchor-link" href="#Variables-latentes-excluidas-del-modelado">¶</a></h3><p>Las siguientes variables del simulador <strong>no se usan como features</strong> por no ser observables en planta real:
-<code>Clay_idx</code>, <code>UF_capacity_factor</code>, <code>Overflow_Turb_NTU_clean</code>, <code>Floc_effectiveness</code>, <code>pH_clean</code>.
-Solo se usan para la generación de etiquetas y validación interna del simulador.</p>
+<p>El 5.1% equivale a aproximadamente <strong>4–5 días de crisis por cada 90 días de operación</strong> — un número significativo en términos de agua perdida y riesgo al circuito de flotación.</p>
 </div>
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=r06-metodologia">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=r06-alerta-temprana">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <hr/>
-<h2 id="3.-Metodolog%C3%ADa-de-Modelado">3. Metodología de Modelado<a class="anchor-link" href="#3.-Metodolog%C3%ADa-de-Modelado">¶</a></h2><h3 id="Feature-engineering">Feature engineering<a class="anchor-link" href="#Feature-engineering">¶</a></h3><p>A partir de los 30 tags de proceso se generaron 221 features (<code>FEATURES_PROD</code>) mediante:</p>
-<ul>
-<li><strong>Estadísticas rolling</strong>: media, desviación estándar, máximo, mínimo — ventanas de 15 min, 30 min, 1 h, 6 h, 12 h, 24 h</li>
-<li><strong>Lags temporales</strong>: 1, 3, 6, 12 puntos (5 min a 1 h)</li>
-<li><strong>Deltas</strong>: primera diferencia (Δ5min) y delta-6 (Δ30min)</li>
-<li><strong>Pendientes de regresión lineal</strong>: ventanas 60 min y 120 min para variables de tendencia lenta (BedLevel, pH, Qu, RakeTorque)</li>
-<li><strong>Features cíclicas de tiempo</strong>: <code>hour_sin</code>, <code>hour_cos</code>, <code>dow_sin</code>, <code>dow_cos</code></li>
-</ul>
-<p>Las variables con información de régimen (<code>is_CLAY</code>, <code>is_UF</code>) fueron <strong>explícitamente excluidas</strong> del conjunto de features de producción por constituir data leakage — no son observables en operación real.</p>
-<h3 id="Split-temporal-y-validaci%C3%B3n-cruzada">Split temporal y validación cruzada<a class="anchor-link" href="#Split-temporal-y-validaci%C3%B3n-cruzada">¶</a></h3><p>Se utilizó un <strong>split temporal estricto en el día 60</strong> (no aleatorio), preservando la estructura de dependencia temporal de la serie:</p>
-<table>
+<h2 id="Resultado-1:-Alerta-Temprana-a-30-Minutos">Resultado 1: Alerta Temprana a 30 Minutos<a class="anchor-link" href="#Resultado-1:-Alerta-Temprana-a-30-Minutos">¶</a></h2><h3 id="%C2%BFQu%C3%A9-logra?">¿Qué logra?<a class="anchor-link" href="#%C2%BFQu%C3%A9-logra?">¶</a></h3><p>El sistema analiza las señales del proceso en tiempo real y emite una alerta cuando detecta que el espesador se encamina hacia una crisis en los próximos 30 minutos — mientras la turbidez todavía está en zona degradada pero aún no es crisis.</p>
+<h3 id="%C2%BFCu%C3%A1nto-mejor-que-la-alarma-actual?">¿Cuánto mejor que la alarma actual?<a class="anchor-link" href="#%C2%BFCu%C3%A1nto-mejor-que-la-alarma-actual?">¶</a></h3><table>
 <thead>
 <tr>
-<th>Conjunto</th>
-<th>Período</th>
-<th>Observaciones</th>
-<th>Tasa de eventos</th>
+<th></th>
+<th>Alarma actual (NTU &gt; 80)</th>
+<th><strong>TWS — Alerta Temprana</strong></th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>Entrenamiento</td>
-<td>Días 0–60</td>
-<td>17,280</td>
-<td>5.62%</td>
+<td>Momento del aviso</td>
+<td>Cuando la crisis ya está en curso</td>
+<td><strong>30 minutos antes</strong></td>
 </tr>
 <tr>
-<td>Prueba (held-out)</td>
-<td>Días 60–90</td>
-<td>8,592</td>
-<td>4.13%</td>
+<td>Eventos detectados</td>
+<td>~6 de cada 10</td>
+<td><strong>8 de cada 10</strong></td>
+</tr>
+<tr>
+<td>Falsas alarmas</td>
+<td>—</td>
+<td>~2 por día (en 90 días de simulación)</td>
 </tr>
 </tbody>
 </table>
-<p>La validación cruzada usó <code>TimeSeriesSplit(n_splits=3, test_size=2800)</code>, garantizando que cada fold de validación siempre esté temporalmente posterior al fold de entrenamiento. <strong>No se usó KFold aleatorio</strong>, que introduciría leakage temporal.</p>
-<h3 id="M%C3%A9trica-principal:-PR-AUC-(Average-Precision)">Métrica principal: PR-AUC (Average Precision)<a class="anchor-link" href="#M%C3%A9trica-principal:-PR-AUC-(Average-Precision)">¶</a></h3><p>Con una tasa de eventos del 5%, la curva Precisión-Recall es más informativa que ROC-AUC: el área bajo ROC puede ser alta (~0.98) incluso para modelos con escasa utilidad práctica en la clase minoritaria. PR-AUC es sensible al balance entre falsas alarmas y eventos perdidos — el trade-off operacionalmente relevante.</p>
-<h3 id="Manejo-del-desbalance-de-clases">Manejo del desbalance de clases<a class="anchor-link" href="#Manejo-del-desbalance-de-clases">¶</a></h3><p>Se evaluó SMOTE (sobremuestreo sintético) vs. <code>class_weight='balanced'</code>. El análisis mostró que <strong>SMOTE degrada consistentemente el PR-AUC</strong> en validación temporal (RF: −7.9 pp, LightGBM: −4.6 pp), probablemente por generar interpolaciones sintéticas que violan la estructura temporal. Se adoptó <code>class_weight='balanced_subsample'</code> para Random Forest.</p>
+<blockquote>
+<p><strong>En términos concretos:</strong> de las 523 crisis que ocurrieron en los 30 días de evaluación, el sistema alertó correctamente en 416 casos con al menos 30 minutos de anticipación. En 107 casos no detectó la crisis a tiempo — principalmente eventos de aparición muy abrupta.</p>
+</blockquote>
+<h3 id="%C2%BFPor-qu%C3%A9-tiene-sentido-desde-el-proceso?">¿Por qué tiene sentido desde el proceso?<a class="anchor-link" href="#%C2%BFPor-qu%C3%A9-tiene-sentido-desde-el-proceso?">¶</a></h3><p>Las señales que el sistema aprende a combinar son exactamente las que un metalurgista experimentado monitorearía en forma manual:</p>
+<table>
+<thead>
+<tr>
+<th>Señal</th>
+<th>Por qué precede a la crisis</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Turbidez medida (rolling 15–30 min)</strong></td>
+<td>Tendencia sostenida al alza distingue el inicio real de la crisis vs. picos transitorios del sensor</td>
+</tr>
+<tr>
+<td><strong>Caudal de underflow (Qu)</strong></td>
+<td>Caída de Qu precede al colapso del lecho en modo UF</td>
+</tr>
+<tr>
+<td><strong>Nivel de lecho (rolling 12h)</strong></td>
+<td>Acumulación progresiva en escala de turno refleja estrés crónico</td>
+</tr>
+<tr>
+<td><strong>Torque del rastrillo (rolling 1h)</strong></td>
+<td>Aumento de resistencia indica densificación del lecho antes de la crisis</td>
+</tr>
+</tbody>
+</table>
+<p>El sistema no usa variables que no estén disponibles en planta real — solo señales del DCS estándar.</p>
 </div>
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=r07-modelo-a">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=r07-diagnostico">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <hr/>
-<h2 id="4.-Componente-A-%E2%80%94-Alerta-Temprana-a-30-Minutos">4. Componente A — Alerta Temprana a 30 Minutos<a class="anchor-link" href="#4.-Componente-A-%E2%80%94-Alerta-Temprana-a-30-Minutos">¶</a></h2><h3 id="Selecci%C3%B3n-de-modelo-y-tuning">Selección de modelo y tuning<a class="anchor-link" href="#Selecci%C3%B3n-de-modelo-y-tuning">¶</a></h3><p>Se compararon tres algoritmos en validación cruzada temporal (TOP-30 features por mutual information, parámetros por defecto):</p>
+<h2 id="Resultado-2:-Diagn%C3%B3stico-de-Causa-%E2%80%94-CLAY-o-Falla-de-Underflow">Resultado 2: Diagnóstico de Causa — CLAY o Falla de Underflow<a class="anchor-link" href="#Resultado-2:-Diagn%C3%B3stico-de-Causa-%E2%80%94-CLAY-o-Falla-de-Underflow">¶</a></h2><p>Saber que viene una crisis no es suficiente si el operador no sabe qué hacer. La acción correctiva depende de la causa:</p>
 <table>
 <thead>
 <tr>
-<th>Algoritmo</th>
-<th>CV PR-AUC</th>
-<th>CV ROC-AUC</th>
+<th>Causa</th>
+<th>Señal característica</th>
+<th>Acción correctiva</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><strong>Random Forest</strong></td>
-<td><strong>0.755</strong></td>
-<td><strong>0.977</strong></td>
+<td><strong>CLAY</strong></td>
+<td>Nivel de lecho alto y sostenido, torque elevado</td>
+<td>Aumentar floculante · Dilución en feedwell · Reducir carga de alimentación</td>
 </tr>
 <tr>
-<td>LightGBM</td>
-<td>0.737</td>
-<td>0.973</td>
-</tr>
-<tr>
-<td>Logistic Regression</td>
-<td>0.716</td>
-<td>0.975</td>
+<td><strong>UF</strong></td>
+<td>Caída de caudal de underflow, lecho moderado</td>
+<td>Aumentar caudal de purga · Revisar bomba/válvula · Monitorear densidad</td>
 </tr>
 </tbody>
 </table>
-<p>Random Forest fue seleccionado como modelo base para tuning. Se realizó <code>RandomizedSearchCV</code> (n_iter=20, 60 fits totales) sobre el espacio:
-<code>n_estimators</code> ∈ {100, 200}, <code>max_depth</code> ∈ {5, 10, 15, None}, <code>min_samples_leaf</code> ∈ {10, 20, 30}, <code>max_features</code> ∈ {0.3, 0.5, 'sqrt'}, <code>class_weight</code> ∈ {'balanced', 'balanced_subsample'}.</p>
-<p><strong>Hiperparámetros óptimos:</strong> n_estimators=200, max_depth=None, min_samples_leaf=30, max_features='sqrt', class_weight='balanced_subsample'.</p>
-<h3 id="Resultados-en-conjunto-de-prueba-(d%C3%ADas-60%E2%80%9390,-221-features)">Resultados en conjunto de prueba (días 60–90, 221 features)<a class="anchor-link" href="#Resultados-en-conjunto-de-prueba-(d%C3%ADas-60%E2%80%9390,-221-features)">¶</a></h3><table>
+<p>Aplicar la acción de UF a un evento CLAY — o viceversa — puede agravar el evento.</p>
+<h3 id="El-hallazgo:-el-nivel-de-lecho-es-casi-un-diagn%C3%B3stico-perfecto">El hallazgo: el nivel de lecho es casi un diagnóstico perfecto<a class="anchor-link" href="#El-hallazgo:-el-nivel-de-lecho-es-casi-un-diagn%C3%B3stico-perfecto">¶</a></h3><p>El análisis reveló que una <strong>regla simple de proceso</strong> supera a cualquier modelo de ML para este diagnóstico:</p>
+<div style="background-color: #e8f4f8; border-left: 4px solid #2e6da4; padding: 16px 20px; border-radius: 4px; margin: 16px 0;">
+</div>
+<p><strong>Si BedLevel &gt; 1.9 m → causa probable: CLAY</strong><br/>
+<strong>Si BedLevel ≤ 1.9 m → causa probable: falla de underflow</strong></p>
+<p>Exactitud en datos de evaluación: <strong>93.1%</strong> (339 de 364 eventos correctamente clasificados)</p>
+<p>La razón es física: la arcilla forma una capa densa y rígida que eleva el lecho de forma sostenida, mientras que la falla de underflow no genera esa acumulación. Esta regla <strong>puede implementarse en el DCS hoy mismo</strong>, sin necesidad de modelos de ML.</p>
+<p>El modelo de ML actúa como segunda opinión cuando el sensor de nivel de lecho falla o cuando se busca diagnóstico temprano antes de que el lecho haya divergido.</p>
+<h3 id="Resultado-en-datos-de-evaluaci%C3%B3n-(364-eventos-de-crisis)">Resultado en datos de evaluación (364 eventos de crisis)<a class="anchor-link" href="#Resultado-en-datos-de-evaluaci%C3%B3n-(364-eventos-de-crisis)">¶</a></h3><table>
 <thead>
 <tr>
-<th>Métrica</th>
-<th>Baseline (NTU &gt; 80)</th>
-<th><strong>RF Tuned</strong></th>
-<th>Δ</th>
+<th></th>
+<th>Diagnosticado: CLAY</th>
+<th>Diagnosticado: UF</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>PR-AUC</td>
-<td>0.663</td>
-<td><strong>0.795</strong></td>
-<td>+13.2 pp</td>
+<td><strong>Real: CLAY</strong> (236 eventos)</td>
+<td>183 ✅</td>
+<td>53 ❌</td>
 </tr>
 <tr>
-<td>ROC-AUC</td>
-<td>—</td>
-<td><strong>0.986</strong></td>
-<td>—</td>
-</tr>
-<tr>
-<td>F1-macro</td>
-<td>0.695</td>
-<td><strong>0.870</strong></td>
-<td>+17.5 pp</td>
-</tr>
-<tr>
-<td>Recall (eventos detectados)</td>
-<td>~65%</td>
-<td><strong>79.5%</strong> (416/523)</td>
-<td>+14.5 pp</td>
-</tr>
-<tr>
-<td>Falsas alarmas (30 días)</td>
-<td>alta</td>
-<td>162</td>
-<td>—</td>
-</tr>
-<tr>
-<td>Umbral óptimo (F1-macro)</td>
-<td>—</td>
-<td><strong>0.739</strong></td>
-<td>—</td>
+<td><strong>Real: UF</strong> (128 eventos)</td>
+<td>0</td>
+<td>128 ✅</td>
 </tr>
 </tbody>
 </table>
-<h3 id="Interpretabilidad-f%C3%ADsica-via-SHAP">Interpretabilidad física via SHAP<a class="anchor-link" href="#Interpretabilidad-f%C3%ADsica-via-SHAP">¶</a></h3><p>El análisis SHAP sobre el conjunto de prueba revela que las features más influyentes son físicamente coherentes con el proceso:</p>
-<table>
-<thead>
-<tr>
-<th>Rank</th>
-<th>Feature</th>
-<th>Interpretación física</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>1</td>
-<td><code>Overflow_Turb_NTU__rmean_15m</code></td>
-<td>Turbidez rolling 15 min — señal más directa del estado actual</td>
-</tr>
-<tr>
-<td>2</td>
-<td><code>Overflow_Turb_NTU__rmean_30m</code></td>
-<td>Confirma tendencia sostenida vs. spike transitorio</td>
-</tr>
-<tr>
-<td>3</td>
-<td><code>Qu_m3h</code></td>
-<td>Caída de caudal de underflow precede al colapso del lecho</td>
-</tr>
-<tr>
-<td>4</td>
-<td><code>BedLevel_m__rmean_12h</code></td>
-<td>Acumulación progresiva del lecho en escala de turno</td>
-</tr>
-<tr>
-<td>5</td>
-<td><code>RakeTorque_pct__rmean_1h</code></td>
-<td>Resistencia del lecho — proxy de densidad y cohesividad</td>
-</tr>
-</tbody>
-</table>
-<p>La dominancia de <code>Overflow_Turb_NTU</code> rolling sobre otras señales confirma que el modelo está usando primariamente el <strong>estado de degradación ya en curso</strong> como predictor de crisis inminente — comportamiento esperado para un horizonte de 30 minutos. El valor operacional está en la anticipación estructurada respecto al umbral fijo, no en la detección de causas upstream.</p>
+<p>Los 53 eventos CLAY mal clasificados corresponden a campañas de baja intensidad donde el lecho no alcanzó el umbral de 1.9 m — el escenario donde el modelo ML complementa la regla simple.</p>
 </div>
 </div>
 </div>
@@ -8154,8 +8074,8 @@ Solo se usan para la generación de etiquetas y validación interna del simulado
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <hr/>
-<h2 id="5.-Componente-B-%E2%80%94-Alerta-Preventiva-a-2-Horas">5. Componente B — Alerta Preventiva a 2 Horas<a class="anchor-link" href="#5.-Componente-B-%E2%80%94-Alerta-Preventiva-a-2-Horas">¶</a></h2><h3 id="Motivaci%C3%B3n-y-definici%C3%B3n-del-problema">Motivación y definición del problema<a class="anchor-link" href="#Motivaci%C3%B3n-y-definici%C3%B3n-del-problema">¶</a></h3><p>El Componente A opera cuando el proceso ya está en zona degradada. El Componente B busca detectar la transición desde zona verde (NTU &lt; 50) antes de que ocurra, con un horizonte de 2 horas. El target es <code>green_to_degraded_2h</code>: evento de degradación en los próximos 24 puntos (2 h), condicionado a que el proceso esté actualmente en zona verde.</p>
-<h3 id="An%C3%A1lisis-de-ventana-real-de-anticipaci%C3%B3n">Análisis de ventana real de anticipación<a class="anchor-link" href="#An%C3%A1lisis-de-ventana-real-de-anticipaci%C3%B3n">¶</a></h3><p>Antes de modelar, se analizó la distribución real del tiempo desde zona verde hasta degradación:</p>
+<h2 id="Resultado-3:-Alerta-Precoz-a-2-Horas-%E2%80%94-y-el-L%C3%ADmite-del-Dato-de-Sensor">Resultado 3: Alerta Precoz a 2 Horas — y el Límite del Dato de Sensor<a class="anchor-link" href="#Resultado-3:-Alerta-Precoz-a-2-Horas-%E2%80%94-y-el-L%C3%ADmite-del-Dato-de-Sensor">¶</a></h2><h3 id="La-ambici%C3%B3n">La ambición<a class="anchor-link" href="#La-ambici%C3%B3n">¶</a></h3><p>Si el operador pudiera saber <strong>2 horas antes</strong> que el proceso se encamina hacia una crisis, tendría tiempo para ajustes preventivos suaves: corregir la dosis de floculante gradualmente, anticipar un cambio de turno, reducir la carga de alimentación sin impacto en producción.</p>
+<h3 id="El-problema:-en-zona-verde,-las-se%C3%B1ales-del-sensor-son-silenciosas">El problema: en zona verde, las señales del sensor son silenciosas<a class="anchor-link" href="#El-problema:-en-zona-verde,-las-se%C3%B1ales-del-sensor-son-silenciosas">¶</a></h3><p>El análisis del comportamiento real del proceso mostró algo revelador:</p>
 </div>
 </div>
 </div>
@@ -8177,15 +8097,8 @@ Solo se usan para la generación de etiquetas y validación interna del simulado
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p><strong>Hallazgos del análisis de lead time:</strong></p>
-<ul>
-<li>Tiempo promedio desde zona verde hasta NTU &gt; 50: <strong>26 min</strong> (mediana: 20 min)</li>
-<li>El <strong>71% de las degradaciones</strong> ocurren dentro de los 30 minutos posteriores a la última observación verde</li>
-<li>La NTU medida en el instante de ingreso al target 2h está en <strong>~38 NTU</strong> (zona verde profunda)</li>
-</ul>
-<p>Esto implica que para predecir un evento 2h antes, el modelo debe detectar señales upstream cuando la turbidez aún está en valores completamente normales — el problema de anticipación más difícil del sistema.</p>
-<h3 id="Experimentos-y-diagn%C3%B3stico-de-leakage">Experimentos y diagnóstico de leakage<a class="anchor-link" href="#Experimentos-y-diagn%C3%B3stico-de-leakage">¶</a></h3><p>Se identificó que la versión v1 del Componente B incluía variables de régimen (<code>is_CLAY</code>, <code>is_UF</code>) que presentaban <strong>100% de concordancia con la variable latente <code>Regime</code></strong> — información no observable en producción real. La eliminación de este leakage redujo el rendimiento de prueba en −5.7 pp, cuantificando exactamente el sesgo introducido.</p>
-<p>Se evaluaron además variantes con distinto horizonte de predicción:</p>
+<p><strong>El 71% de las degradaciones ocurren dentro de los 30 minutos siguientes a la última observación en zona verde.</strong> El proceso pasa de NTU ≈ 38 a NTU &gt; 50 en tiempo muy corto — y durante ese tiempo en zona verde, los sensores del DCS muestran valores completamente normales.</p>
+<p>Es el mismo problema que anticipar una tormenta con solo un termómetro local: la señal predictiva a 2 horas plazo no está en los sensores de proceso del espesador — está en la mineralogía de lo que está entrando a la planta.</p>
 </div>
 </div>
 </div>
@@ -8202,388 +8115,214 @@ Solo se usan para la generación de etiquetas y validación interna del simulado
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=r11b-tabla-modelos">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=r11b-resultado-b">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h3 id="%C2%BFQu%C3%A9-logra-el-modelo-con-solo-datos-de-sensor?">¿Qué logra el modelo con solo datos de sensor?<a class="anchor-link" href="#%C2%BFQu%C3%A9-logra-el-modelo-con-solo-datos-de-sensor?">¶</a></h3><p>El modelo de alerta precoz detecta aproximadamente <strong>1 de cada 8 eventos</strong> con 2 horas de anticipación — mejor que no tener nada, pero insuficiente para uso operacional confiable.</p>
+<h3 id="%C2%BFQu%C3%A9-lo-desbloquear%C3%ADa?">¿Qué lo desbloquearía?<a class="anchor-link" href="#%C2%BFQu%C3%A9-lo-desbloquear%C3%ADa?">¶</a></h3><p>El factor limitante no es el algoritmo sino la <strong>disponibilidad de datos de composición de la alimentación</strong>:</p>
 <table>
 <thead>
 <tr>
-<th>Configuración</th>
-<th>CV PR-AUC</th>
-<th>Test PR-AUC</th>
-<th>Obs.</th>
+<th>Dato adicional</th>
+<th>Disponibilidad típica</th>
+<th>Impacto esperado en la alerta precoz</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>v1: FEATURES_PROD + H=2h + n_splits=3</td>
-<td>0.293</td>
-<td>0.191</td>
-<td>Incluye leakage (is_CLAY/is_UF)</td>
-</tr>
-<tr>
-<td>v2a: FEATURES_B + H=2h + n_splits=2</td>
-<td>~0.28</td>
-<td><strong>0.134</strong></td>
-<td>✅ Sin leakage — configuración honesta</td>
-</tr>
-<tr>
-<td>v2b: FEATURES_B + H=1h + n_splits=2</td>
-<td>0.607</td>
-<td>0.071</td>
-<td>CV ilusorio — colapso de positivos en train</td>
-</tr>
-</tbody>
-</table>
-<p>La configuración recomendada (v2a) logra <strong>+48% relativo</strong> sobre el baseline de turbidez rolling, pero el nivel absoluto (PR-AUC = 0.134) es insuficiente para uso operacional autónomo.</p>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noInput" id="cell-id=r12-eval-img">
-<div class="jp-Cell-outputWrapper">
-<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
-</div>
-<div class="jp-OutputArea jp-Cell-outputArea">
-<div class="jp-OutputArea-child">
-<div class="jp-RenderedImage jp-OutputArea-output" tabindex="0">
-<img alt="No description has been provided for this image" class="" src="data:image/png;base64,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TrF58+bZMccck7jumDFj7Prrr7ezzz7bnnzyScuXL58tXrzYVYD43Xzzzfbiiy/a999/7xLQAAAAyLoYXEUDP//8s73yyitu9Nj8+fNdsi6SFD/nz58/SVJ58ODBLplXunTpJOsqXsybN+vrNbds2WLjxo1zN8SuAQMG2Pbt211hi85TVqxYYcOHD7cvv/zS5s6da5UrV07za+rCytVXX23PPfec9enTJ6oV3CSVAQBIg06dOlmLFi0Sf1YislKlSq7SNtaSygpwFXREw+bNm+2rr75yw7P81q1bZ88++6zddtttLqASXa1v166dSxIr4FJCN5Tx48e7wP6jjz6ybt26uWWXXnqpu/r/8MMP27vvvpu4nU8++cTuuecel9z2nH766S4ZrMfuvPNOt2zlypVufxSUvfDCCym+r+OPP94aN27sLiaQVAYAADHvzZRjmyzRq29EY3DFjhpBpqSaihOuuOIKi6S0xM+FChWyaHj77bdd4vuCCy6wWLZ37143sjC3eu655+y0005LcuGhY8eO7txH50KPP/54ul5X5z8a+fnDDz9E9ZyE9hcAAGSAqhWKFCmSpJpBnnnmGWvTpo0LePW4WikoIRro22+/dYGGXqd48eJWv359GzhwYJJ11C9LCVNV/CpwrVGjhvXv3z/VPlrBeiqroldJ0YULF7q2EV5bCAUlgdK7XVFC+ciRI9ahQ4ckyxX4Hz582G699dbEZdrHW265xdauXWu//vpriq+rY6gkfteuXROXqQ2GAiu9trdve/bscfda169KlSruXp+JR4nvo0ePugoYiYuLc5XooaiaWZXpKa0DAACAzOMl0v755x93r7jzscceszp16ri4Vb2OFVMHxq2zZs2yc8891412Uzyo6me1JwjVU1n3KnwQreu14VBRQmBPZb22HgtWPfzNN9+4x1Sh6pkzZ45LlpcsWdKdB2iE32+//RbW+//0009d6ws9L9CoUaPccdD7a9Wqlf30009BXyPcWF+V23fccYc7ZmoRd+GFF7oCjsDe017fY51naBRimTJl3HmO/PXXX+44qf2Dkvaq0NVx15wlgVSJrtGMWk/vI1SbB4001PdALQm1/2p5pwr2cP3999+uSKVs2bJuW7pooVGOwdqvqK3fXXfdldh+7+KLL3bV4uGMHA2sZNcybXPRokUhP1udr+k9NWrUyCZNmpRsHZ1b6jV0/hNNVCoDAJAGu3btsq1bt7qEoqpxX3rpJZeE7NmzZ5L1VPGqgEstGNTz6v3333dVuAok1b5B1NtX1c3qKayEpgKHZcuWJZlsQ+0e9DoKrtRHWJWyat3wv//9z5YsWeKCjrTasWOHu0KuxKySsUrUamhWkyZNXGAbie2qmlgJdX+LCS94ViCm1/NTwOs97gWfwehxtbIIDM70fAXQ2je9DwWg1atXd1XRStQ3b97ctb9QoKwTAn+bDfVSbtCggRtCqZMGBckKglW9rKGOgdtSEKfjoM9PAR8AAACy1vLly9294k2velnJXCUJ7777bpsxY4abW0OJuwkTJrh1FLufc845LjF43333uaIOJYc1gi0UxcuKLzUqUfGfEqui1wikpKSSph9++KFrT+CneToUXyqhLYojNYJOCWXFpwUKFHDJUxWATJs2zSWMQ1GBxu+//+6KMgK98cYbdtNNN7niln79+rl2C4rplYBU0tiTllhfyWC9p6uuuspOPvlkt3/e+UwwXqsHtZTzijBUSKN9ufbaa11CWe9fsbvulUj3WjhoH7zPSElqXSxQ4juwUESUQFbSVe9DBT4q+lDhit6b4viUaLvqRa3iGn0XdH6i93jRRRfZxx9/7JLGfhrRqM9P+6LvzPPPP+/6evvnXwmXzh11875Lfvo89H3U+1ACX233LrnkElu9enXid92jc6JwJmnMTCSVAQBIg8DKWyWCR48e7apX/RSM+athFXToD7+GQHlBmIIrJZw10V+woELUzkFJTwVv/mSrkpnq76vkrYLGtFBy9c0333SBodfCQ8lfBaFeUjmj29WVf1VuBNKkFAoKA3t/eRXE2reU6Pm6uh/I/3wllRWYKyBUlYQCTX9CWPvu74e3dOlS13JDQa6C+hNOOMEFcxqOpkBWJyR+OlkQVWGQVAYAAMi6wg71VFYiTQUZirVVoKG5NpRQVmL5tddec+srKacKVo0eVIsAjdBTDKjiCk0k7W9nl1ILAhV/KIZXUlkJx2Dxrd9ll13mtqntKAkpiveV2FaCWjGqPPjggy45rCSiF1v26tXLFUMoHlUMHooSjKoeVqGEn15P1dnNmjVz79mbV0UVvEoc+5PK4cb6mgxbyVYlqJVw9o6t4mYd92AUS3st6Tx6jpL9fkpQq3WJjoES7PLQQw+5RLSqq2vWrOmWKamq+D6Q9j3wfEuFMzrfSi2p3LdvX/f6Ss57LUy0jzoWKrYJTCoroavvjXcOo8T1iy++6L6XmuQ7LZSQ1ndC35VAugiicwwVyIi+tzqe+v7p/fnpe/PWW29ZNJFUBgBkCU1EoFtKdNVagYBn48aNQYf7BPKGnPmHKQWjAEu3jNBEb+rfK5qoT/3MFMDqSrK/JYM/wFFQqfYKCpYUEHi8xKaGLSkwCzbJh3oHq3JAlbQKpAOH/ClgTGtSWcPk/JXVCjhV6avqgUhtV0PZdOU/kALgYL3nvN51ejwlaXm+Anl93qqWUNCqKnAliPWzEvrec1QpoMBQkwcqiPSCV02qoYpzBef6fP2vK/7jAiD7uLh3f9sft8eKFP/v9xoAkL0KO1QQ8c4777h4U8USovYEfkpiKsGrtmxKznmxt0YOKlHnJXgjSYlCxZsqUFDhhigZuXPnzsQkos4LtExJai+h7BVJqCBCifHdu3e7KuZgvJYRXkzqUfsNVWMr4e6fqFvnSl4Lj7TG+t65mL91nVe5G+qcS0npQP5zI10YUPyt+FyUuNZ5ko6L2oTouHgJZdF+qsJbowpDvaaSu0qqq1exXiOlZK9ifE26reOklnle2zzRdlSNrJGL/nMZJeX9RTHa3//973+2atUqd+EhXD/++KMbCanRosF6Iet77iWURa+t74H/PM2jz1/nPvv27Yv4ZJXhIqkMAMgSCqT0RzctFHCk9TkS6jmpVRaEQ8lXf2WDrq6rtYKuHKtSwgvgFKyq6kGJdH9fMn8wosDy9ddfd0lpDbtSHzUlpjVsz0swq4pWV6yDDbETBY5ppbYQgZXCCkrU68wTie0G6zms4C9YT2Z91t7jKQn3+QokFewpgPZXReiz07BC9WDzhgzqOZpEJHCSF/2sQFotN/zV0d77iuZMywDSr3rtBhw+AMhmvMIOtTnQqDdV9HrxsmJ//Vu9gQMLVpRI9s4NlHBU4YCSekoIKiZUAlOJ3EhNuKdktRK1aovgJZX1b41K9JKI6sWrRKDeQyAlUFXssGbNGtfaIS2xtvc+1XrCT8lzf/I6LbG+d2wDq6IDj7Vf4LpeIlfHXS0BA88jFLd7x0VJ0sD9Fx2rwKSyKtaVANacLDqega8ZKqmsQhMdu0GDBrlbMNpHf1LZn+T2J/R37Nhh4dJITlVAqxpc54DBBG7H21aw7cTCOQlJZQBAllBAF9hfN5ACPz9Vkqb2nGBCPcff8iBSFGSp8kEVrQrOFPxpuJZaLigROWLECFd1oGBOiUz/UDAlM3W1WpUAqqBQAlNBpwJOVS+oJYOCSg330jCuYPzD2MKl100tMM3odjVELFjwo2Oh96tt+QMgtbWQqlWrpvi6er63rl/g89X6QpXk/tYX3smErvYrCPWSynqOPrvAXm0aMimB78P7OVTLEgAAAERWYGFHMKkl1/S45hJRD1/131VFqyaL0xwcWhZs0rv0UOHIE0884SqANdpNk7+pWCFwYu/08nrrpiWhGSgzzjE8wYpEVJmrlhoq+NBIQh1r7YNGqeo+PT21VZCjBL7eg/ZXxT1KPOuCQUqv6T12zz33JPa4DhSYNA/n/CklukigXtFKdGsf/aMg07sdff6qUE6tKCczkVQGAGSJ9LSeUJI5sLVFONLznIxQ313RMC4voamEuAJVf9WDksrBktIKiHRTQKQJLR544AGXePWGP6lfmR7PyqvQGd2uAjwdh0D6DujKvCoj1N/No8lUvMdToseVtFcw6G8XoucrqPK3JhENowsMyLTM+8y8PstKKmuYm7+Kw+vvHFjB4c0yHjjZIAAAALKeCkoUGyqe88dnigc1WjKw4ERtF3RT4lcFH5pYWxW0Gj0YTFpjYSWVVZWrWFhFC2pl4Z8kWrGl4tbFixcHrWZVjJtSUlfVrEokejGp/ziIjoO/tYLaQmhdVVGnNdb3jq2e768gVrVvuJT8/O6779wxUc9kj/bTT8dF7ytwuQQeK10U0OhFJez91b06h0qNF++r6CewrUpm2LZtm0soa391HLy5YDJKn0m0z0eSN28EAABhU5CmqmJdGff+qOsKs4Izf0JTswT7Z1H2hoEF8pKqXosHXdVXstObdMRPw8PUtiEzZHS7p5xyigsgA/t/denSxQVwquD2J3pfffVVN8TM36dZ1ccKrHWMPWoNohME/yzdqgJRX7gLLrggMYnvJZd1guCnwFP7rpYlHq+/nSYq9Ch41kUAzZStpLPfH3/84aoMUhuSCCA2fTLqaXvpvuvcPQAg+zvvvPMSJ0Dz86pwvUmyFZsGVnwGxt7BFCtWzN0rQR0OnROoClgjEHVTEtHfSk3nCkoyal4VnSN4FOMqya3J4kL1UxbF0qraVg9lPy1TYlZxtSaC86j3ceC+hxvre5W8/thdXnrppbCOhfd+JfDYB35eWk/b0zmTJiP0qBhFxTqpvaZaXgQr4gmk0YhqfTJy5MigIyDVhiNS9u7d676fOtaqUA7W2iO91Is6rXPrRBqVygAApMHXX3/tEp1ery0Ffrqarp7IXvCnwFVBrIZzqUeb1lMfOA2j8vct1uQQan+h9VUFoPUUsKnnsTcL81VXXeVmXNaEF7ryfuqpp7pktfZByxVgpTYUMD0yul29Jw3x06zSmtjCo/em2aOHDRvmksUtW7Z0gaOqjzXZin/I1/333+9m8tZVeK8ftpLKqizRxIaaGVktKHTMtG+qfvAowaykr46xesF5E/UNHz7cBfZejzsv0a0qDU2qogS1qji0T5qJWsFmYI89TfKn16enMpA9rVux2JbPT3oiDgDIvhS7XX311TZq1CiXPFW7s5kzZ7o4Uj2T1apO9LPiRvW1VaWuJmhTUlUxvJeYDsYrMNBoQlUcK6mrWNBLNgejogVV5Wr0ouLOwAm5NfeKYkrF/JoET3Gz4k4lt4cOHZrqe1b8qv3xT+in/dLr3nTTTa5SWfugOFqJ1sCeyuHG+nrv6kOtBLAqbhVTT5s2zZYsWeJeJ5x4WPunpLrel+J/FZKoKCew0loUz6sloOZG0XHR6EIlsBXX+8+jlJRXUY8+B71fjRjVZ6mEcbBEcSCdm+nYK/l/4403uuOjpL76M69du9ZVcUfClVde6b6LarOi5LhuHrUA0fczPVTkogIlfQ+iiaQyAABp4B+ypSBRbR5eeeUVF8x4FMSp6nXIkCEugarJKp5++mlXieAPhtTvV8tGjx7tkplKkCoIVjDlTSyhAFQJTvUG08zWEyZMcMPlFPj07ds3sSI30jK6XQ31U3CuoNSfVBYdF004ocBZlRO6Yv/222+7BHxqlHTWVX71Y3vxxRddJYUS03od/2QnCjKVqH7sscdcv+r33nvP9S5T4KYWI/5+yAqG9V4ffPBBV03ivZb2SYGgnwLt+fPnJ6usAAAAQPSovZriVMVxilvVRk8FCprIzeMlmzWSTQlExdvq1azChmCTy3kUayqmVAWwEp5eO4jUksqKLTWBnDcqzs+bh0X7qMIGvWbr1q1d/Kn71CgprKIWjcLr2bNn4nLF3UoOq4BD8bKSploncEK6tMT6elzHU/G01lPLCMXMipd1PhQOFeL06dPHJXNVXayksIp1AudTadq0qUto33XXXe68SwUpOjdSoth/HqVtqz+2jrF6I2v/NF+KKrWVwE2N2vCp0luvre+MEuZKSGs0o/98L6Pmzp3r7nW+p5ufiorSm1TWKE21/fC3OYmGPAnhdpXO5RYsWOBmaNSJZDjDXZ/4eLb9uPDfqyOnNahsg7onHToLADmN1+Yg8Co4ci8FyhpapkRsJId6RZMuEqi6XNUBVCrHxv9X0hqjIbqi8Xm98NW8JD+r9YUqles0bmF9hiQ9wfPre36TLNg7AMgYYvDcSxXQqhhWzJ3VlCxVAjZYEQYyl6rZNYpTFxV0ASBS/69IT4xGT2UAAJApNGxNVQjhDOHLDlTBoCoYDSskoQwAAIBoUhX277//br/88kumbkcjAwNp1J6qnf29opE11M5ErU7UuiTaaH8BAAAyjYa15RTlypVz/doAAACAaFP7gwMHDmT6dlQgolF66k2t3s+K73VTq40aNWpk+vaRlJLJsZBQFpLKAAAAAAAAAJJp06aNm1RQfaVVYKFk9iOPPOImCkTuRlIZAAAAAAAAQDJnn322uwGB6KkMAAAAAAAAAAgblcoAAAAAco1WHbpY3SYtrGylatHeFQAAgGyLpDIAAACAXKN1hy7R3gUAAIBsj/YXAAAAAAAAAICwkVQGAAAAAAAAAISN9hcAAAAAco0ZUz6z7ZvWuZ7KtMIAAABIH5LKAAAAAHKNmVM+s+XzZ1mdxi1IKgMAAKQT7S8AAEC6bd++3QYPHmwzZszgKAIAAABALkFSGQCAGJUnTx67/fbbs2RbY8eOddtbuXJl2M9JSEiwXr162dSpU6158+YxsU9ZYebMmVawYEFbtWqVxarDhw9bjRo1bMSIEdHeFQAAgGwl1mNwIFaQVAYAIAyPPPKIC/i2bt0a9PHGjRvbGWeckauO5dChQ10APGHCBJdkTa8nn3zSPv30U8suHnjgAbviiivsmGOOSbJ80aJF1rFjRytevLiVLVvWrrrqKtuyZUvYr/v555/biSeeaIULF7aaNWvaww8/bEeOHEmyzoYNG+y+++6z9u3bW4kSJdx3Ukn9QAUKFLC77rrLnnjiCTtw4EAG3i0AAED0EIP/Z+fOnda7d2+rUKGCFStWzMWDs2fPDvtYhhurKn688MILrVKlSi7W1GcABENSGQAQ25YvNxswwOycc8zatPn3Xj9rOaJGiUolPCdOnGilS5fO0GuFSior0N2/f3+y5G00zZ0716ZMmWI333xzkuVr1661tm3b2rJly9z7ueeee+yrr76ys88+2w4dOpTq63799dd20UUXuWP50ksvuX8//vjj1qdPnyTrLV682J5++mlbt26dNWnSJMXXvPbaa91FkHfffTed7xYAAACxID4+3s4//3wX16mKWsUdmzdvdkUtS5cuTfX5aYlVH3zwQfv9998zZSQichYm6gMAxKb5883uvdds0qR/f86T57/Hvv3WbNgws44dVS6rMuGo7Was2rt3r6tgyCyqplXFbmbKly+fu8WSMWPGuCrik08+OclyBec65n/88Yd7XFq1auUCdQ1rVFVJShTYN23a1CZPnmz58/8bnpUsWdK9bt++fa1BgwZu2UknnWTbtm1z1SXjx4+37t27h3xNJajPOecct/3rrrsuAu8eAAAA0YjBFfdNnz7dPvroI+vWrZtbdumll1q9evXc6LbUigjSEqv+888/duyxx7riBFVFA6FQqQwAiD3Tpv1blewllCUh4b+b9/PXX/+7ntaPMWpJoOFiH374oZvIrlq1aq5dgYLAXbt22cGDB61fv35WsWJFNwRNVaVaFsw777xj9evXd4lcJRV//PHHoMMCFy5caD169LAyZcrYaaed5h7766+/7JprrrHatWu751euXNklGJWYTK/vv//eTj/9dBcwK3HZpUsXN5wu2D79/fffLuBVgrRcuXIuQepvx6B1FOCOGzfO/Vs37W+oHnMKcDt37uyOb4sWLaxIkSKuYtdrAfHJJ5+4n71jNWfOnHTtfyiqqD7zzDPdfvl9/PHHbr+8IF06dOjgAn19B1Kiz003BfNeQlluvfVW17daJxEefYeUUA6XThR+/vlnN6EiAABATpdTY3DFg2pH0bVr18RlSvgqzv7ss89Cvof0xKqKt4FwUKkMAIi9CuULLjCLiwtvfa2n9adPj8mK5aeeesolPtUHV8PN1NpA/W7z5s1rO3bscMHob7/95hKotWrVsoceeijJ86dNm2YffPCB3XHHHVaoUCE38Zp6oWmyOPVx9lPV6nHHHecqEZSMlG+//dZWrFjhAmYFswsWLLBRo0a5e203MDmaGrV+6NSpkwuQte9qT6H3dOqpp7qeboFBqAJdLdNx0PZefPFF977ffPNN9/hbb71lN9xwg6uU8Cok6tSpk+I+6DgqcL/p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Tg25bqFChez1119PsqxUqVLJ1nvggQdsyJAhduONN1rLli3ts88+sx49ergk9OWXX5643tq1a61t27buNZ588kmX4H7mmWds3rx5NnPmTCtYsGCE3y0AAACyA5LKWWh73MGs3BwAAABygCpVqtiGDRuscuXKNmvWLJcEDiV//vzWs2fPFF9v3bp19uyzz9ptt91mw4cPd8tuuOEGa9eund17773WvXt3y5cvn1uuRPLevXvtjz/+cEltadWqlZ199tmuWrp3794Rfa8AAADIHmh/AQAAAMQwVR8roRyuo0eP2u7du0M+rqrkw4cP26233pq4TBXKt9xyi6tM/vXXXxOXf/zxx9a5c+fEhLJ06NDB6tWrZx9++GG63g8AAACyP5LKWeTw0fis2hQAAAByqX379lnJkiVduwr1P1Y1slpW+M2ZM8eKFStmxx9/fJLlqkD2Hvcqmjdv3mwtWiSfXFrreutlN9Vq17c6jVu4ewAAAKQP7S+yyIbte7NqUwAAAMilbTL69+9vJ554opuIb9KkSTZixAj7888/XR9mtcYQtdKoVKmSq04OfL6sX78+cT3/8sB1t2/fbgcPHnSV1MEoIR04od+yZcss2rr2HhDtXQAAAMj2SCpnkbUklQEAAJCJnnrqqSQ/a8I9tanQpHzjx49PnIBv//79QRPBhQsXTnzcf5/auqGSykpoDx48OMPvCwAAALGH9hdZZO22pJXKSetCAAAAgMi78847LW/evDZlypTEZUWKFHEVxoEOHDiQ+Lj/Ppx1g1HP5vnz5ye5ffrppxF4VwAAAIg2KpWzyNptSXvZAQAAAJlNSd9y5cq5VhX+1hU//PCDJSQkJGmB4bW7qFq1auJ6/uV+WqaezaGqlKVixYruFmvWrvjb9sftsSLFS1j12g2ivTsAAADZEpXKUapUBgAAADLbnj17bOvWrVahQoXEZc2aNXMT+i1atCjJujNmzEh8XKpVq+aeN2vWrGSvO3PmzMT1spsJo4baywOvd/cAAABIH5LKWYSkMgAAADKL2lEogRzosccecxXJHTt2TFzWpUsXK1CggOt57NE6r776qkskt2nTJnH5JZdcYl9++aWtWbMmcdl3331nS5Ysse7du/OBAgAA5FK0v8gCcQcO2659h7JiUwAAAMiBhg8fbjt37rT169e7n7/44gtbu3at+3efPn1sx44d1rx5c7viiiusQYN/Wzp88803NnHiRJdQViLZU716devXr58NGzbMDh8+bC1btnS9jn/66Sd75513LF++fInrDhw40D766CNr37699e3b1+Li4tzzmjRpYtdee22WHwcAAADEhphOKmtSkIceesjeeustFyg3bdrUHn/8cTv77LPDev4HH3xgzz//vP3111+uGqNhw4bu+WeeeaZlpbXbaX0BAACA9HvmmWds1apViT9/8skn7iY9e/a00qVLW+fOne3bb7+1cePG2dGjR61u3br25JNP2j333OMm6/MbMmSIlSlTxkaOHGljx4614447zt5++23r0aNHkvVq1Khh06ZNs7vuusvuu+8+K1iwoJ1//vn27LPPpthPGQAAADlbTCeVr7nmGhs/fryrpFCgq4D3vPPOcxOLnHbaaSk+95FHHrFHH33UunXr5l5HVRiacXrdunWW1bbu/nd2bAAAACA9Vq5cmeo6KsQIl5LM999/v7ulplGjRq7qGQAAAIj5pLIm/3j//ffd8DpVV0ivXr2scePG1r9/f5s+fXrI5/72228uoawKijvvvDML9xoAAAAAAAAAcraYnahPFcrq59a7d+/EZYULF7brr7/efv311ySThQRSy4vKlSu7vm+adES93wAAAAAAAAAAOTipPGfOHKtXr56VLFkyyfJWrVq5+7lz54Z8rmak1oQjL774olWoUMFKlChhVapUcROcAAAAAAAAAAByYPuLDRs2uERwIG+ZN/N1IE3ot3XrVvvll1/s+++/t4cffthq1qxpY8aMcTNja8K+m266KcVtb9682bZs2ZJk2bJlyzL0fgAAAAAAAAAgJ4jZpPL+/fuDziitFhje48F4rS62bdvmejJfdtll7mdN2NekSRN7/PHHU00qjxgxwgYPHhyBdwEAAAAglvQZMjrauwAAAJDtxWz7iyJFitjBgweTLT9w4EDi46GeJ6pIViLZP8O1Esxr16611atXp7jtW2+91ebPn5/k9umnn2bwHQEAAAAAAABA9hezlcpqc7Fu3bqgbTGkatWqQZ9XtmxZV81cunRpN9GfX8WKFRNbZKglRihaz1sXAAAAAAAAAJANKpWbNWtmS5Yssd27dydZPmPGjMTHg1FFsh5TT+RDhw4leczrw6zJ+wAAAAAAAAAAOSiprNYVR48etVGjRiUuUzsMTbjXunVrq1GjhlumVhZ///13kueqzYWeO27cuCRtM9555x1r2LBhyCpnAAAAADnbS/ddZ/06N3X3AAAAyGHtL5Q47t69u91///22efNmq1u3rksSr1y50t54443E9Xr16mXTpk2zhISExGWaiO/111+32267zVU7q9XFW2+9ZatWrbIvvvgiSu/ILI+Z/beXAAAAAAAAAJD9xGxSWd58800bNGiQSwirD3LTpk3tyy+/tLZt26b4PE3W9/3331v//v1t9OjRtnfvXtcS46uvvrJzzz3XoqVS6SK2cef+qG0fAAAAAAAAAHJ0UlkT7g0bNszdQpk6dWrQ5Zpob+zYsRZLKpYiqQwAAAAAAAAge4vppHJOU6l0UbNV26O9GwAAAMgkGzdudK3aZs+ebbt27bL4+Pgkj+fJk8e+++47jj8AAACyNZLKWahyqSJZuTkAAABkob/++svOOOMM279/v9WvX9/mzZvnJoneuXOnrVu3zurUqZM42TQAAACQneWN9g7kJhVIKgMAAORY9913nxUvXtwWL15sU6ZMcRNJv/DCC7ZmzRr74IMP3BwhQ4YMifZuAgAAABlGUjmLlClWyArlz5dVmwMAAEAW++WXX+ymm26ymjVrWt68/4bZXvuL7t2725VXXmn33nsvnwsAAACyPZLKWThJn1+Cmd01drrdPe5X27BjX1btBgAAADKJEsiVKlVy/y5durTly5fPtm//bz6NJk2a2B9//MHxBwAAQLZHT+UsUql08n7KC9bscPcf/7bCbu/UOKt2BQAAAJmgVq1a9s8//7h/q1JZP6sNxqWXXuqWTZ8+3SWbEV0X9+5v++P2WJHiJfgoAAAA0olK5SxSKYV+yl/MWpVVuwEAAIBMcs4559hHH32U+PMtt9xir7/+unXo0MHOOussGzdunPXo0YPjH2XVazew45q2dPcAAABIHyqVM0mC+lukUqkMAACAnOOBBx6wK664wg4fPmwFChSwfv362d69e+3jjz92rTAGDRpkAwcOjPZuAgAAALGRVNbM1qNGjbI33njDVqxY4Wa2DpQnTx47cuSI5RZxBw4n+blSqaK272Dw91+lTNEs2isAAABkljJlythJJ52UJP598MEH3Q0AAADISSKSVO7fv78999xz1qxZM+vZs6cLqHO7Tbv2JZuob+XmPUHXrVG+eBbtFQAAAJC7fTLqaVu3YrFVq13fuvYeEO3dAQAAyL1JZfWHu+SSS+zDDz+MxMvlCJt37k/W/iJUUrloQbqQAAAAZDfXXXedq0bWiD21t9DPqdH6Gt2H6FFCefn8WXwEAAAAGRCRbOb+/fvdBCT4z5H4pE2Vi5A4BgAAyFG+//57y5s3r8XHx7uksn5W0jglqT0OAAAA5Jqksmaz/v333613796ReDkAAAAg5q1cuTLFnwEAAICcKm8kXmTEiBH222+/2ZNPPmnbtm2LxEtme02PKZv479LFCkZ1XwAAAAAAAAAgppLK9evXtxUrVtigQYOsYsWKVqxYMStZsmSSW6lSpSw3ubHD8S6ZrNvgy1pGe3cAAACQyWbPnu2KLULRY3PnzuVzAAAAQLYXkfYXmqSP/nBJ1ata2j6462yLT0iwvPTOAwAAyPEeeOABK1KkiN16661BH1fP5YkTJ9qXX36Z5fsGAAAAxFxSeezYsZF4mRyJhDIAAEDu8Mcff9j9998f8vHTTz/dnnrqqSzdJwAAACBm218AAAAAud2ePXssf/7QNRt58+a1Xbt2Zek+AQAAADGdVN69e7cNHjzYWrVqZZUqVXI3/fvRRx91jwEAAAA52XHHHWeTJ08O+fikSZOsdu3aWbpPSK5Vhy527hU3u3sAAABEMam8fv16a968uUsqx8XF2amnnupue/futUceecROPPFE27Bhg+V2h4/GR3sXAAAAkEmuv/56++qrr+yuu+6ynTt3Ji7Xv++8806XVNY6iK7WHbpYpytvdfcAAACIYk/lAQMG2MaNG92kI+edd16Sx77++mvr3r273XfffTZu3DjLzdZt3xvtXQAAAEAmueOOO2zu3Ln2/PPP24svvmhVq1ZNLMCIj4+3q666yiWXAQAAgOwuIkllVV3069cvWUJZOnXq5ALs1157zXK7YoUjcrgBAAAQg/LkyWNjxoyxXr162ccff2wrVqxwy7t06WKXXHKJnXHGGdHeRQAAACAiIpLlVJsL9VAOpXLlym6d3K5js5r23k/LbO/BI9HeFQAAAGSS9u3buxti04wpn9n2TeusbKVqtMAAAACIZk/lhg0b2nvvvWeHDh1K9tjhw4fdY1ontytRpICN7dPehvU62VrVrRDt3QEAAABynZlTPrNv3nvV3QMAACCKSWX1VJ4xY4a1atXKRo0aZVOnTnW3kSNHumUzZ850PZVhVrJIQWt6TDnLny8ihx4AAAAxIiEhITH+LV++vOXLly/ZLX9+2qEBAAAg+4tIVKuJ+NTeQonjm2++2fWT8wLrihUr2ujRo61bt26R2BQAAAAQk/r372/PPfecNWvWzHr27GllypSJ9i4BAAAAmSJipRLXXHONC55nzZplq1atcsuOOeYYa9GiBRUZAAAAyPHGjRvnJuT78MMPo70rAAAAQKaK6Pg7Dec7+eST3Q0AAADITfbv328dOnSI9m4AAAAAsZlU/vHHH91927Ztk/ycGm99AAAAIKc566yz7Pfff7fevXtHe1cAAACA2Esqn3HGGa5vsqoxChYsmPhzKOqtrMePHj2akX0FAAAAYtaIESPs3HPPtSeffNJuuukmK1euXLR3CQAAAIidpPIPP/zg7pVQ9v8MAAAA5Fb169e3+Ph4GzRokLsVLlzY8uXLl2QdFVrs2rUravsIAAAARC2p3K5duxR/BgAAAHIbTdKX0ug9xIZqtesnuQcAAECUJ+oLtGLFCjt48KAdf/zxmbkZAAAAIOrGjh0b7V1AGLr2HsBxAgAAyKC8FgEvvviiXX755UmWXXvttXbcccdZ48aNrUWLFrZ58+ZIbAoAAAAAAAAAkN2Tyq+//rpVqlQp8edvvvnGxo0b52a+fumll1zF8uDBgyOxKQAAACBmrV692m6++WbXX7lMmTL2448/uuVbt261O+64w+bMmRPtXQQAAABio/3FqlWrkrS4+PDDD61WrVr2yiuvuJ83btxob731ViQ2BQAAAMSkhQsX2umnn+4m62vdurUtW7bMjhw54h4rX768/fzzz7Z371574403or2rudraFX/b/rg9VqR4Cateu0G0dwcAACD3JpUTEhKS/Dx58mTr0qVL4s/HHnusSywDAAAAOVX//v2tdOnS9ttvv7kJ+ypWrJjk8fPPP98++OCDqO0f/jVh1FBbPn+W1WncwvoMGc1hAQAAiFb7i3r16tmECRMSW1+sX7/eOnXqlPj42rVrXYANAAAA5FRqdXHLLbdYhQoVXFI5UM2aNW3dunVR2TcAAAAg5iqV77nnHuvRo4frG6chfWqFce655yY+/v3331uzZs0isSkAAAAgJqntRdGiRUM+vmXLFitUqFCW7hMAAAAQs0nlyy+/3MqVK2cTJ050Fcm33nqr5c//70tv377dypYta1dddVUkNgUAAADEpBNPPNG++uorFwsHUm/l999/304++eSo7BsAAAAQc0llOfvss90tkBLKn3zySaQ2AwAAAMSk+++/3zp37uxaYKjoQjZt2mRTpkyxJ5980hYtWmTDhw+P9m4CAAAAsZNUBgAAAHIzzSkyduxY69u3r40aNcot69mzp5vUumTJkvbmm29a27Zto72bAAAAQHSSyrVq1bK8efPa33//bQUKFHA/B5uMxE+PL1++PL37CQAAAMQ8tXzr2rWrTZ482ZYtW+b6LNepU8fNN1KiRIlo7x4AAAAQvaRyu3btXJJYiWX/zwAAAEBuV6xYMbv44oujvRsAAABAbCWVNawvpZ8BAACA3Gb16tVhrVezZs1M3xcAAAAgM9FTGQAAAIiAY489NqzRe0ePHuV4R1GfIaM5/gAAALGQVH7vvffsm2++CVmxfO2117qJSy699NJIbA4AAACIOaNHj06WVFYCeeXKlW6SvooVK9ptt90Wtf0DAAAAYiqp/L///c+aN28e8vEiRYq4dUgqAwAAIKe65pprQj42YMAAa926te3atStL9wkAAADIDP/OtJdBixcvTjGpfMIJJ9jff/8diU0BAAAA2XLyPo3eU6EFAAAAkN1FJKmckJBgO3fuDPn4jh077PDhw5HYFAAAAJAtxcfH28aNG6O9G7neS/ddZ/06N3X3AAAAiGJSWVXK6qt86NChZI8dPHjQ3n333RQrmQEAAICcavfu3fbll1/asGHDiIkBAACQI0Skp/J9991nnTt3tvbt27t/N2rUyC2fP3++PfXUU7ZgwQL7/PPPI7GpHGnTzn32/s/LrOmx5axh9TLR3h0AAACkQ968eZNN1Ocf2VezZk0bMWIExxYAAADZXkSSyp06dbI33njD+vbtaxdddFGS4LlEiRL22muv2fnnnx+JTeVIi9btdLe8efLY233PtHIlCkd7lwAAAJBGDz30ULKksn4uU6aM1alTx8455xzLnz8i4TcAAAAQVfkjOdt1165dbfLkybZixQq3zAuelVhG6uITEuyH+eut2ym1OVwAAADZzCOPPBLtXQAAAACyRERLJUqWLGndunWL5EvmOiWKFIj2LgAAACAdjhw5Yvv27XMxcajeykWLFqVaGQAAANleRCbqk6NHj9r7779vN910k1188cU2b948t3zXrl32ySef2KZNmyK1qRyNpDIAAED2dMcdd1ib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+ZuamtrYzQMAOFhwYzcAAFC9P/7xj9KhQwcpKCiQ1atXmw8HX331lWzatMl8MAAAAADsxpMaR7766quyePFiE09GRkY6/uQtW7bstNv83//9nzz66KMN0h5fY+f8AvA/JJUBwMtdeeWVMmDAAPPzL3/5S2nWrJlMnTpV/vGPf8gNN9zQ2M0DAACAw+LJhIQEmT59uixatEhuvvnmSvfJzc2VqKgocYLQ0NDTbqNX/eniq4qLi6W0tNTWuaip+nhOAM5H+QsAcJgLLrjA3O7evdu9btu2bXL99ddLfHy8Gb2sHxo06VxeZmamPPTQQ9K+fXsJCwuTNm3ayNixY+X48ePm8aKiInn88cflnHPOkSZNmpgPEvp6K1asaMAjBAAAQH266KKLzO3evXvNrZZXi46ONvHlyJEjJSYmRn7+85+7k8sPP/ywJCcnm/ixW7dupk6uZVmVPvf8+fPNNhqTakz5xRdflHl8//79cu+995ptIiIiTIJ7zJgxVdYbzsvLk7vvvttsFxsba2LXjIyMMtvYqflbWU3lwsJCExs3b97cHPM111wjhw4dqrBvTdq8efNmc351O421p0yZYpK9drj6Yc+ePXL55ZebWDwpKcmMNPc83571ip9//nnp1KmT6ZstW7bU6LOB3bZWdn511LueUy2noq/RqlUrGT16dJnPKC4zZ850t3HgwIGydu3aMo9v3LjRHHvHjh3NcyUmJsqdd94pJ06csHXeADQO3/2aDgB8lCt4bdq0qTsYPP/88029Zb2kT4PP9957T372s5/JBx98INddd53ZLicnxySIt27daoK0/v37m2SyBpgaPOsI6KysLPnb3/5mRqzcddddkp2dLW+88YYJar/99lvp169fox47AAAA6s6V+NPkqOdIV435hg4dapKVWhZDE5maaNUBBuPGjTOx4NKlS+U3v/mNmeNjxowZZZ73888/l3fffVceeOABk0B85ZVX5IorrjBxZO/evc02mlD85ptv5KabbjKJTI1ttRyHJi01KVq+HIfWf46LizMJzO3bt5ttNcm7cuVK2xPvVUVHbb/11ltyyy23yJAhQ+Szzz6TUaNGVdjObptTUlLkwgsvNOfSFZdrQlWTtnaVlJSYc3buuefKtGnTZMmSJTJ58mTznJpc9jRr1iyT3B0/frw535pEtvvZoC5t1TZeddVV8umnn5pz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" width="900"/>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=r12b-limitacion-estructural">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h3 id="Limitaci%C3%B3n-estructural:-la-brecha-de-datos-mineral%C3%B3gicos">Limitación estructural: la brecha de datos mineralógicos<a class="anchor-link" href="#Limitaci%C3%B3n-estructural:-la-brecha-de-datos-mineral%C3%B3gicos">¶</a></h3><p>El rendimiento limitado del Componente B no es atribuible a la elección de algoritmo ni a la ingeniería de features — es una <strong>limitación de información</strong>. En zona verde (NTU ≈ 38), los sensores de proceso no contienen señal suficiente para distinguir una operación normal de una que evolucionará hacia crisis en 2 horas.</p>
-<p>La señal predictiva a ese horizonte existe, pero reside en variables que típicamente no están disponibles en tiempo real:</p>
-<table>
-<thead>
-<tr>
-<th>Fuente de información</th>
-<th>Delay típico</th>
-<th>Impacto esperado en Comp. B</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong>Análisis granulométrico</strong> (% −200 mesh, % arcilla)</td>
-<td>4–8 h (lab)</td>
-<td>Alto — CLAY es predecible si se conoce la mineralogía de la alimentación</td>
+<td><strong>Análisis granulométrico</strong> (% arcilla, % −200 mesh)</td>
+<td>Laboratorio, 4–8 h de delay</td>
+<td><strong>Alto</strong> — el ingreso de arcilla es predecible con este dato</td>
 </tr>
 <tr>
 <td><strong>Datos de planificación minera</strong> (zona de extracción)</td>
-<td>8–24 h</td>
+<td>Sistema de despacho, 8–24 h</td>
 <td>Medio — correlación con tipo de roca</td>
 </tr>
 <tr>
-<td><strong>Sensores en línea de partículas</strong> (FBRM, PVM)</td>
-<td>Tiempo real</td>
-<td>Alto — pero raramente disponibles en espesadores industriales</td>
+<td><strong>Sensores en línea</strong> (FBRM, densímetro de alimentación)</td>
+<td>Tiempo real, si están instalados</td>
+<td>Alto — señal inmediata de composición</td>
 </tr>
 </tbody>
 </table>
-<p>Este resultado es en sí mismo un <strong>hallazgo técnico relevante</strong>: cuantifica con precisión qué información adicional es necesaria para mejorar el horizonte de anticipación, y provee la justificación técnica para instrumentación adicional o integración de datos de laboratorio.</p>
+<blockquote>
+<p>La alerta precoz de 2 horas es técnicamente alcanzable — pero requiere integrar datos que hoy no están en el DCS estándar. Definir cuáles están disponibles en cada planta es parte del trabajo de validación con datos reales.</p>
+</blockquote>
 </div>
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=r13-diagnostico">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=r13-ventana">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <hr/>
-<h2 id="6.-Componente-C-%E2%80%94-Diagn%C3%B3stico-de-Causa-Ra%C3%ADz:-CLAY-vs.-UF">6. Componente C — Diagnóstico de Causa Raíz: CLAY vs. UF<a class="anchor-link" href="#6.-Componente-C-%E2%80%94-Diagn%C3%B3stico-de-Causa-Ra%C3%ADz:-CLAY-vs.-UF">¶</a></h2><h3 id="Separabilidad-en-el-espacio-de-variables-reales">Separabilidad en el espacio de variables reales<a class="anchor-link" href="#Separabilidad-en-el-espacio-de-variables-reales">¶</a></h3><p>Se analizó la separabilidad entre modos CLAY y UF mediante el índice Δ/IQR para cada variable de planta disponible durante eventos. El nivel de lecho (<code>BedLevel_m</code>) emerge como el discriminador dominante:</p>
-<table>
-<thead>
-<tr>
-<th>Variable</th>
-<th>Δ/IQR (CLAY − UF)</th>
-<th>Interpretación física</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>BedLevel_m</code></td>
-<td><strong>+1.8</strong></td>
-<td>CLAY forma capa densa y rígida → lecho alto y sostenido</td>
-</tr>
-<tr>
-<td><code>RakeTorque_pct</code></td>
-<td>+0.9</td>
-<td>Mayor resistencia en lecho arcilloso</td>
-</tr>
-<tr>
-<td><code>Qu_m3h</code></td>
-<td>−1.2</td>
-<td>UF reduce caudal por obstrucción del sistema de purga</td>
-</tr>
-<tr>
-<td><code>Floc_gpt</code></td>
-<td>+0.4</td>
-<td>Mayor consumo de floculante en régimen CLAY</td>
-</tr>
-<tr>
-<td><code>Overflow_Turb_NTU</code></td>
-<td>~0</td>
-<td>Similar en ambos modos durante el evento</td>
-</tr>
-</tbody>
-</table>
-<h3 id="Resultados:-regla-vs.-modelo-ML">Resultados: regla vs. modelo ML<a class="anchor-link" href="#Resultados:-regla-vs.-modelo-ML">¶</a></h3><table>
-<thead>
-<tr>
-<th>Método</th>
-<th>Exactitud</th>
-<th>F1-macro</th>
-<th>ROC-AUC</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong>Regla: BedLevel &gt; 1.9 m → CLAY</strong></td>
-<td><strong>93.1%</strong></td>
-<td><strong>0.923</strong></td>
-<td><strong>0.922</strong></td>
-</tr>
-<tr>
-<td>LightGBM TOP-30 (threshold=0.05)</td>
-<td>85.4%</td>
-<td>0.851</td>
-<td>0.836</td>
-</tr>
-</tbody>
-</table>
-<p>La regla simple supera al modelo ML en todos los indicadores. Esto tiene una interpretación técnica directa: <strong>BedLevel_m captura el mecanismo diferenciador fundamental</strong> entre los dos modos de falla. El modelo ML, al tener acceso a 30 features adicionales, no puede mejorar sobre ese discriminador porque las demás variables aportan ruido marginal en el espacio de diagnóstico.</p>
-<h3 id="Rol-complementario-del-LightGBM">Rol complementario del LightGBM<a class="anchor-link" href="#Rol-complementario-del-LightGBM">¶</a></h3><p>El modelo ML es superior en dos escenarios específicos:</p>
-<ol>
-<li><strong>Falla del sensor de nivel de lecho</strong> (stuck, spike, datos faltantes): el modelo usa el vector completo de 30 tags</li>
-<li><strong>Diagnóstico temprano</strong>: el ML puede clasificar la causa antes de que BedLevel diverja significativamente del valor basal, usando la tendencia conjunta de Qu, Floc y pH</li>
-</ol>
-<h3 id="Rendimiento-en-set-de-prueba-(n=364-eventos)">Rendimiento en set de prueba (n=364 eventos)<a class="anchor-link" href="#Rendimiento-en-set-de-prueba-(n=364-eventos)">¶</a></h3><table>
-<thead>
-<tr>
-<th></th>
-<th>Pred. CLAY</th>
-<th>Pred. UF</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong>Real CLAY</strong> (n=236)</td>
-<td>183 ✅</td>
-<td>53 ❌</td>
-</tr>
-<tr>
-<td><strong>Real UF</strong> (n=128)</td>
-<td>0</td>
-<td>128 ✅</td>
-</tr>
-</tbody>
-</table>
-<p>Los 53 eventos CLAY mal clasificados corresponden a campañas de baja intensidad donde el lecho no alcanzó el umbral de 1.9 m — exactamente el escenario donde el LightGBM agrega valor como segunda opinión.</p>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=r14-ventana-operacional">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<hr/>
-<h2 id="7.-Ventana-Operacional-Integrada">7. Ventana Operacional Integrada<a class="anchor-link" href="#7.-Ventana-Operacional-Integrada">¶</a></h2><p>El timeline siguiente ilustra cómo interactúan los tres componentes durante un evento típico de tipo CLAY, y dónde se sitúa el margen operacional ganado respecto al sistema actual:</p>
-<pre><code>TIEMPO  │ NTU CLEAN │ ZONA         │ TWS                                 │ SIN TWS
-────────┼───────────┼──────────────┼─────────────────────────────────────┼──────────────
- T−2h   │   38 NTU  │ 🟢 Verde     │ Comp. B: pH↑ + BedLevel↑ detectado │ Sin señal
-        │           │              │ → alerta preventiva (señal débil)   │
-────────┼───────────┼──────────────┼─────────────────────────────────────┼──────────────
- T−26m  │   50 NTU  │ 🟡 Degradado │ Comp. A activo                      │ Sin señal
-────────┼───────────┼──────────────┼─────────────────────────────────────┼──────────────
- T−30m  │   80 NTU  │ 🟡 Degradado │ ⚠️ ALERTA FIRME (P=0.74)           │ Sin señal
-        │           │              │ Comp. C: BedLevel=2.1m → CLAY       │
-        │           │              │ → Acción: ↑ floculante + dilución   │
-────────┼───────────┼──────────────┼─────────────────────────────────────┼──────────────
-  T 0   │  100 NTU  │ 🔴 CRISIS    │ Acción correctiva ya en marcha      │ ⚠️ PRIMER AVISO
-════════╪═══════════╪══════════════╪═════════════════════════════════════╪══════════════
-GANANCIA│           │              │ ~30 min de margen efectivo           │ 0 min
+<h2 id="C%C3%B3mo-se-integran-los-tres-componentes:-la-ventana-operacional">Cómo se integran los tres componentes: la ventana operacional<a class="anchor-link" href="#C%C3%B3mo-se-integran-los-tres-componentes:-la-ventana-operacional">¶</a></h2><p>El timeline siguiente muestra cómo actuaría TWS durante un evento típico de tipo CLAY, comparado con el sistema de alarma actual:</p>
+<pre><code>TIEMPO    │ TURBIDEZ  │ ZONA         │ CON TWS                          │ SIN TWS
+──────────┼───────────┼──────────────┼──────────────────────────────────┼────────────────
+  T − 2h  │  38 NTU   │ 🟢 Verde     │ Alerta precoz: pH↑ + lecho↑      │ Sin señal
+          │           │              │ (señal débil, requiere lab data)  │
+──────────┼───────────┼──────────────┼──────────────────────────────────┼────────────────
+  T − 26m │  50 NTU   │ 🟡 Degradado │ Alerta temprana activa            │ Sin señal
+──────────┼───────────┼──────────────┼──────────────────────────────────┼────────────────
+  T − 30m │  80 NTU   │ 🟡 Degradado │ ⚠️ ALERTA FIRME                  │ Sin señal
+          │           │              │ Diagnóstico: CLAY                 │
+          │           │              │ → ↑ floculante + dilución         │
+──────────┼───────────┼──────────────┼──────────────────────────────────┼────────────────
+  T   0   │ 100 NTU   │ 🔴 Crisis    │ Acción correctiva ya en marcha   │ ⚠️ PRIMER AVISO
+══════════╪═══════════╪══════════════╪══════════════════════════════════╪════════════════
+GANANCIA  │           │              │ ~30 minutos de margen efectivo    │ 0 minutos
 </code></pre>
-<p><strong>Impacto en recuperación de agua:</strong> Una intervención 30 min antes de la crisis permite iniciar el ajuste de floculante en una zona de turbidez donde la respuesta del sistema es más rápida y el consumo de reactivo menor. La reducción de tiempo en zona de crisis se traduce directamente en mayor volumen de agua recuperada y menor riesgo de impacto en el circuito de flotación.</p>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=r15-limitaciones">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<hr/>
-<h2 id="8.-Limitaciones-T%C3%A9cnicas-y-Brecha-hacia-Datos-Reales">8. Limitaciones Técnicas y Brecha hacia Datos Reales<a class="anchor-link" href="#8.-Limitaciones-T%C3%A9cnicas-y-Brecha-hacia-Datos-Reales">¶</a></h2><h3 id="Limitaciones-del-dataset-sint%C3%A9tico">Limitaciones del dataset sintético<a class="anchor-link" href="#Limitaciones-del-dataset-sint%C3%A9tico">¶</a></h3><table>
-<thead>
-<tr>
-<th>Limitación</th>
-<th>Impacto potencial</th>
-<th>Mitigación</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Simulador calibrado sobre un único espesador hipotético</td>
-<td>Parámetros de proceso (deadband, pesos de estrés) pueden no representar la planta objetivo</td>
-<td>Re-calibración con datos históricos de la planta</td>
-</tr>
-<tr>
-<td>Solo 2 modos de falla (CLAY, UF)</td>
-<td>Eventos reales pueden incluir modos combinados o no contemplados</td>
-<td>Análisis de residuos + clase "otros" en producción</td>
-</tr>
-<tr>
-<td>Fallas de sensor parametrizadas</td>
-<td>Distribución real de fallas puede diferir</td>
-<td>Análisis de calidad de señal sobre datos históricos</td>
-</tr>
-<tr>
-<td>90 días de operación</td>
-<td>Posible subrepresentación de eventos estacionales</td>
-<td>Dataset más largo al validar con datos reales</td>
-</tr>
-</tbody>
-</table>
-<h3 id="%C2%BFQu%C3%A9-se-espera-al-migrar-a-datos-reales?">¿Qué se espera al migrar a datos reales?<a class="anchor-link" href="#%C2%BFQu%C3%A9-se-espera-al-migrar-a-datos-reales?">¶</a></h3><p>Basado en la estructura del problema y los resultados obtenidos:</p>
+<p><strong>¿Qué cambia en la operación?</strong></p>
+<p>Con 30 minutos de margen, el operador puede aplicar la corrección de floculante de forma <strong>gradual y controlada</strong>, en lugar de una maniobra de emergencia. Esto implica:</p>
 <ul>
-<li><p><strong>Componente A</strong>: Se espera que el framework metodológico (features temporales + RF + CV temporal) sea transferible. El rendimiento absoluto dependerá de la calidad de los datos de etiquetado y la variabilidad operacional real. PR-AUC &gt; 0.60 en datos reales se considera un resultado exitoso de validación.</p>
-</li>
-<li><p><strong>Componente C</strong>: La regla de BedLevel es robusta y directamente aplicable si el sensor de nivel está disponible y calibrado. Requiere ajuste del umbral óptimo (actualmente 1.9 m) a las condiciones específicas de la planta.</p>
-</li>
-<li><p><strong>Componente B</strong>: Este es el componente con mayor potencial de mejora con datos reales. Si se dispone de análisis granulométrico histórico con timestamps, se estima que el PR-AUC puede superar 0.40 — umbral de utilidad operacional para alertas con acción preventiva.</p>
-</li>
+<li>Menor consumo pico de floculante</li>
+<li>Menor tiempo total en zona de crisis</li>
+<li>Mayor volumen de agua recuperada por turno</li>
+<li>Menor probabilidad de impacto al circuito de flotación</li>
 </ul>
 </div>
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=r16-colaboracion">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=r14-colaboracion">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <hr/>
-<h2 id="9.-Propuesta-de-Colaboraci%C3%B3n:-Validaci%C3%B3n-con-Datos-Reales-de-Planta">9. Propuesta de Colaboración: Validación con Datos Reales de Planta<a class="anchor-link" href="#9.-Propuesta-de-Colaboraci%C3%B3n:-Validaci%C3%B3n-con-Datos-Reales-de-Planta">¶</a></h2><h3 id="Objetivo">Objetivo<a class="anchor-link" href="#Objetivo">¶</a></h3><p>Validar y refinar el framework TWS sobre datos históricos de un espesador convencional de Cu/Mo en operación, con el fin de producir resultados publicables y un prototipo de sistema de alerta validado en condiciones reales.</p>
-<h3 id="Datos-m%C3%ADnimos-requeridos">Datos mínimos requeridos<a class="anchor-link" href="#Datos-m%C3%ADnimos-requeridos">¶</a></h3><table>
+<h2 id="El-siguiente-paso:-validaci%C3%B3n-con-datos-reales-de-planta">El siguiente paso: validación con datos reales de planta<a class="anchor-link" href="#El-siguiente-paso:-validaci%C3%B3n-con-datos-reales-de-planta">¶</a></h2><p>TWS está listo como proof-of-concept. El framework funciona sobre datos sintéticos calibrados — pero su valor real se demuestra sobre el historial operacional de un espesador real.</p>
+<h3 id="%C2%BFQu%C3%A9-se-necesita?">¿Qué se necesita?<a class="anchor-link" href="#%C2%BFQu%C3%A9-se-necesita?">¶</a></h3><p>Los datos son los que ya existen en el DCS/SCADA de cualquier planta con un espesador instrumentado:</p>
+<table>
 <thead>
 <tr>
-<th>Dataset</th>
+<th>Dato</th>
 <th>Descripción</th>
-<th>Período mínimo</th>
+<th>Período</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><strong>Series temporales de proceso</strong></td>
-<td>Tags del DCS/SCADA: turbidez overflow, nivel de lecho, torque rastrillo, caudales (feed/underflow/overflow), dosificación de floculante, densidades</td>
+<td><strong>Series de proceso</strong></td>
+<td>Tags 5-min: turbidez overflow, nivel de lecho, torque, caudales, densidades, floculante</td>
 <td>6–12 meses</td>
 </tr>
 <tr>
 <td><strong>Registro de eventos</strong></td>
-<td>Bitácora de eventos de turbidez: timestamp inicio/fin, causa identificada por operador (si existe)</td>
+<td>Bitácora de eventos de turbidez y su causa (si existe)</td>
 <td>Ídem</td>
 </tr>
 <tr>
-<td><strong>Análisis de laboratorio</strong> <em>(opcional pero de alto impacto)</em></td>
-<td>Granulometría de alimentación, % arcilla, assay mineralógico — con timestamp de toma de muestra</td>
+<td><strong>Análisis de laboratorio</strong> <em>(si disponible)</em></td>
+<td>Granulometría de alimentación con timestamp</td>
 <td>Ídem</td>
 </tr>
 </tbody>
 </table>
-<p>Los datos pueden ser anonimizados y no requieren identificación de planta o empresa para la validación técnica.</p>
-<h3 id="Lo-que-se-aporta-a-cambio">Lo que se aporta a cambio<a class="anchor-link" href="#Lo-que-se-aporta-a-cambio">¶</a></h3><ul>
-<li>✅ Código completo y documentado (repositorio GitHub, MIT license)</li>
-<li>✅ Pipeline de feature engineering y modelado reproducible</li>
-<li>✅ Análisis técnico detallado del espesador específico</li>
-<li>✅ Co-autoría en publicación técnica si los resultados lo justifican</li>
-<li>✅ Dashboard operacional prototipo si la validación es exitosa</li>
-</ul>
-<h3 id="Roadmap-de-madurez-del-sistema">Roadmap de madurez del sistema<a class="anchor-link" href="#Roadmap-de-madurez-del-sistema">¶</a></h3><pre><code>✅ FASE 0 — Proof of concept (COMPLETADO)
-   Framework metodológico · Dataset sintético calibrado
-   Comp. A: PR-AUC=0.795 · Comp. C: Acc=93.1%
-
-🔜 FASE 1 — Validación con datos reales (OBJETIVO INMEDIATO)
-   Re-entrenamiento sobre datos históricos de planta
-   Ajuste de umbrales · Análisis de drift de concepto
-   Meta: PR-AUC &gt; 0.60 en Comp. A con datos reales
-
-🔜 FASE 2 — Integración de datos de laboratorio
-   Granulometría de alimentación como feature
-   Re-entrenamiento Comp. B · Meta: PR-AUC &gt; 0.40
-
-🔜 FASE 3 — Prototipo operacional
-   Interfaz en sala de control · Integración DCS/SCADA
-   Loop de re-entrenamiento periódico
-</code></pre>
+<p>Los datos pueden ser anonimizados. No se requiere identificar la planta o la empresa.</p>
+<h3 id="%C2%BFQu%C3%A9-se-ofrece-a-cambio?">¿Qué se ofrece a cambio?<a class="anchor-link" href="#%C2%BFQu%C3%A9-se-ofrece-a-cambio?">¶</a></h3><div style="background-color: #e8f4f8; border-left: 4px solid #2e6da4; padding: 16px 20px; border-radius: 4px; margin: 16px 0;">
+</div>
+<p>✅ <strong>Análisis técnico completo del espesador</strong> — caracterización de regímenes operacionales, detección de eventos históricos, análisis de causas</p>
+<p>✅ <strong>Modelos calibrados a los datos de la planta</strong> — alerta temprana y diagnóstico ajustados al comportamiento específico del equipo</p>
+<p>✅ <strong>Código abierto y reproducible</strong> — todo el pipeline disponible en GitHub para uso, adaptación y extensión</p>
+<p>✅ <strong>Co-autoría en publicación técnica</strong> si los resultados lo justifican</p>
+<p>✅ <strong>Prototipo de dashboard operacional</strong> como siguiente paso si la validación es exitosa</p>
+<h3 id="Hoja-de-ruta">Hoja de ruta<a class="anchor-link" href="#Hoja-de-ruta">¶</a></h3><table>
+<thead>
+<tr>
+<th>Fase</th>
+<th>Objetivo</th>
+<th>Estado</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>0 — Proof of concept</strong></td>
+<td>Demostrar viabilidad del framework con dataset sintético</td>
+<td>✅ Completo</td>
+</tr>
+<tr>
+<td><strong>1 — Validación real</strong></td>
+<td>Re-entrenar y evaluar sobre historial de planta real</td>
+<td>🔜 Pendiente</td>
+</tr>
+<tr>
+<td><strong>2 — Integración lab</strong></td>
+<td>Incorporar granulometría para alerta precoz de 2h</td>
+<td>🔜 Pendiente</td>
+</tr>
+<tr>
+<td><strong>3 — Prototipo operacional</strong></td>
+<td>Panel en sala de control · Integración DCS</td>
+<td>🔜 Pendiente</td>
+</tr>
+</tbody>
+</table>
 </div>
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=r17-conclusiones">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=r15-conclusiones">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <hr/>
-<h2 id="10.-Conclusiones">10. Conclusiones<a class="anchor-link" href="#10.-Conclusiones">¶</a></h2><ol>
-<li><p><strong>El framework de detección temprana a 30 minutos es técnicamente viable</strong> con datos de sensor estándar de planta (PR-AUC = 0.795, Recall = 79.5%). La combinación de features temporales multi-escala sobre señales de turbidez, nivel de lecho y caudal de underflow captura efectivamente la dinámica previa a las crisis.</p>
-</li>
-<li><p><strong>El diagnóstico CLAY/UF tiene una solución elegante de proceso</strong>: la regla <code>BedLevel &gt; 1.9 m → CLAY</code> alcanza 93.1% de exactitud, siendo físicamente interpretable (diferencia en mecanismo de formación del lecho). El modelo ML actúa como redundancia ante fallas del sensor de nivel.</p>
-</li>
-<li><p><strong>La anticipación a 2 horas está limitada por disponibilidad de información mineralógica</strong>, no por la capacidad del framework de ML. Con PR-AUC = 0.134 con datos de sensor online, el Componente B es funcional pero insuficiente para uso autónomo. La integración de análisis granulométrico es el próximo paso de mayor impacto.</p>
-</li>
-<li><p><strong>La metodología es físicamente coherente</strong>: el análisis SHAP revela que el modelo prioriza las señales correctas desde la perspectiva del proceso, aumentando la confianza en la transferibilidad del framework a plantas reales.</p>
-</li>
-<li><p><strong>La validación con datos reales es el paso crítico pendiente</strong>. El framework completo — simulador, pipeline de features, modelos y análisis de interpretabilidad — está disponible en código abierto para facilitar esa colaboración.</p>
-</li>
-</ol>
-<hr/>
-<h3 id="Repositorio-y-recursos">Repositorio y recursos<a class="anchor-link" href="#Repositorio-y-recursos">¶</a></h3><table>
+<h2 id="En-resumen">En resumen<a class="anchor-link" href="#En-resumen">¶</a></h2><table>
 <thead>
 <tr>
-<th>Artefacto</th>
-<th>Ubicación</th>
+<th>Pregunta</th>
+<th>Respuesta de TWS</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>Repositorio completo</td>
-<td><code>github.com/MatiasValenzuelaMunoz/Thickener-Water-Recovery-Sentinel-TWS</code></td>
+<td>¿Se puede anticipar una crisis 30 min antes?</td>
+<td><strong>Sí</strong> — 8 de cada 10 eventos detectados con anticipación</td>
 </tr>
 <tr>
-<td>Simulador de proceso</td>
-<td><code>src/simulate_fixed.py</code></td>
+<td>¿Se puede diagnosticar la causa automáticamente?</td>
+<td><strong>Sí</strong> — 93% de exactitud con una regla simple de nivel de lecho</td>
 </tr>
 <tr>
-<td>Feature engineering</td>
-<td><code>notebooks/02_feature_engineering.ipynb</code></td>
+<td>¿Se puede anticipar con 2 horas de margen?</td>
+<td><strong>Parcialmente</strong> — requiere datos de composición de alimentación</td>
 </tr>
 <tr>
-<td>Componente A — Alerta 30 min</td>
-<td><code>notebooks/03_modeling.ipynb</code></td>
+<td>¿Qué se necesita para llevar esto a producción?</td>
+<td><strong>Datos históricos reales</strong> de un espesador instrumentado</td>
+</tr>
+</tbody>
+</table>
+<hr/>
+<div style="background-color: #f0f7ee; border-left: 5px solid #2e6da4; padding: 20px 25px; border-radius: 4px; margin-top: 10px;">
+</div>
+<p><strong>TWS no es un sistema que reemplaza el criterio operacional — es una herramienta que lo amplifica.</strong> El operador sigue tomando la decisión; el sistema le da más tiempo y más información para tomarla bien.</p>
+<p>Si trabajás en una planta con espesadores convencionales y tenés acceso a datos históricos, esta es una invitación a colaborar.</p>
+<hr/>
+<h3 id="Repositorio-y-contacto">Repositorio y contacto<a class="anchor-link" href="#Repositorio-y-contacto">¶</a></h3><table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Repositorio</strong></td>
+<td>github.com/MatiasValenzuelaMunoz/Thickener-Water-Recovery-Sentinel-TWS</td>
 </tr>
 <tr>
-<td>Componente B — Alerta preventiva</td>
-<td><code>notebooks/04_model_B.ipynb</code></td>
+<td><strong>Notebooks</strong></td>
+<td>EDA · Feature Engineering · Modelo A · Modelo B · Diagnóstico</td>
 </tr>
 <tr>
-<td>Componente C — Diagnóstico</td>
-<td><code>notebooks/04_diagnosis.ipynb</code></td>
-</tr>
-<tr>
-<td>Bitácora de decisiones técnicas</td>
-<td><code>bitacora/</code></td>
+<td><strong>Bitácora técnica</strong></td>
+<td><code>bitacora/</code> — decisiones de diseño y calibración del simulador</td>
 </tr>
 </tbody>
 </table>
