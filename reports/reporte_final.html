@@ -7803,93 +7803,88 @@ a.anchor-link {
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <div style="background: linear-gradient(135deg, #1a3a5c 0%, #2e6da4 100%); padding: 40px 50px; border-radius: 12px; color: white; margin-bottom: 10px;">
 </div>
-<h1 style="font-size: 2.4em; margin-bottom: 8px; font-weight: 700; letter-spacing: 1px;">
-⚙️ Thickener Water Recovery Sentinel
+<h1 style="font-size: 2.2em; margin-bottom: 8px; font-weight: 700;">
+Thickener Water Recovery Sentinel (TWS)
 </h1>
-<h2 style="font-size: 1.4em; font-weight: 300; margin-bottom: 30px; opacity: 0.9;">
-Sistema Inteligente de Detección Temprana de Crisis de Turbidez
+<h2 style="font-size: 1.2em; font-weight: 300; margin-bottom: 30px; opacity: 0.9;">
+Machine Learning para Detección Temprana de Crisis de Turbidez en Espesadores Cu/Mo
 </h2>
 <hr style="border-color: rgba(255,255,255,0.3); margin: 20px 0;"/>
-<table style="color: white; font-size: 1em; border: none;">
-<tr><td style="padding: 4px 20px 4px 0; opacity: 0.7;">Proceso</td><td><strong>Espesador convencional Cu/Mo</strong></td></tr>
-<tr><td style="padding: 4px 20px 4px 0; opacity: 0.7;">Dataset</td><td><strong>90 días · 5 min · 25,920 registros</strong></td></tr>
-<tr><td style="padding: 4px 20px 4px 0; opacity: 0.7;">Versión</td><td><strong>v1.0 — Febrero 2026</strong></td></tr>
-<tr><td style="padding: 4px 20px 4px 0; opacity: 0.7;">Estado</td><td><strong>Prototipo de investigación — dataset sintético</strong></td></tr>
+<table style="color: white; font-size: 0.95em; border: none;">
+<tr><td style="padding: 4px 24px 4px 0; opacity: 0.7;">Proceso objetivo</td><td><strong>Espesador convencional de concentrado Cu/Mo</strong></td></tr>
+<tr><td style="padding: 4px 24px 4px 0; opacity: 0.7;">Dataset</td><td><strong>Sintético operacionalmente calibrado · 90 días · 5 min · 25,920 obs.</strong></td></tr>
+<tr><td style="padding: 4px 24px 4px 0; opacity: 0.7;">Modelos</td><td><strong>Random Forest · LightGBM · Regla de proceso</strong></td></tr>
+<tr><td style="padding: 4px 24px 4px 0; opacity: 0.7;">Estado</td><td><strong>Proof-of-concept · Validación con datos reales requerida</strong></td></tr>
+<tr><td style="padding: 4px 24px 4px 0; opacity: 0.7;">Versión</td><td><strong>v1.0 — Febrero 2026</strong></td></tr>
 </table>
 </div>
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=r02-resumen-ejecutivo">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=r02-abstract">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <hr/>
-<h2 id="%F0%9F%8E%AF-Resumen-Ejecutivo">🎯 Resumen Ejecutivo<a class="anchor-link" href="#%F0%9F%8E%AF-Resumen-Ejecutivo">¶</a></h2><p>El sistema TWS aplica modelos de Machine Learning sobre las señales de proceso del espesador para anticipar crisis de turbidez antes de que afecten la operación. El prototipo fue desarrollado y evaluado sobre un dataset sintético operacionalmente realista de 90 días.</p>
-<h3 id="Resultados-principales">Resultados principales<a class="anchor-link" href="#Resultados-principales">¶</a></h3><table>
-<thead>
-<tr>
-<th>Componente</th>
-<th>Resultado</th>
-<th>Valor operacional</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong>Alerta Temprana 30 min</strong></td>
-<td>Detecta el <strong>79.5%</strong> de las crisis con anticipación</td>
-<td>Operador tiene ≥30 min para actuar</td>
-</tr>
-<tr>
-<td><strong>Diagnóstico CLAY / UF</strong></td>
-<td>Exactitud <strong>93.1%</strong> (regla de nivel de lecho)</td>
-<td>Orienta la acción correctiva correcta</td>
-</tr>
-<tr>
-<td><strong>Alerta Preventiva 2h</strong></td>
-<td>PR-AUC <strong>0.134</strong> (señal débil sin datos de lab)</td>
-<td>Define el próximo paso de madurez</td>
-</tr>
-</tbody>
-</table>
-<blockquote>
-<p><strong>Conclusión de una línea:</strong> TWS detecta 4 de cada 5 crisis con 30 minutos de anticipación y diagnostica correctamente la causa en más del 93% de los casos.</p>
-</blockquote>
+<h2 id="Abstract">Abstract<a class="anchor-link" href="#Abstract">¶</a></h2><p>Las crisis de turbidez en el overflow de espesadores convencionales representan uno de los modos de falla de mayor impacto en la recuperación de agua de proceso en plantas concentradoras de Cu/Mo. La detección actual basada en umbrales estáticos de turbidez medida provee aviso solo cuando la crisis ya se ha instaurado, dejando al operador con una ventana de reacción insuficiente.</p>
+<p>Este trabajo presenta <strong>TWS (Thickener Water Recovery Sentinel)</strong>, un framework de ML para anticipación y diagnóstico de estas crisis sobre señales de proceso en tiempo real. Se desarrolló y evaluó sobre un dataset sintético de 90 días calibrado para reproducir el comportamiento dinámico de un espesador Cu/Mo operando bajo tres regímenes: operación normal, ingreso de arcilla fina (CLAY), y degradación de underflow (UF).</p>
+<p><strong>Contribuciones principales:</strong></p>
+<ol>
+<li><strong>Alerta temprana a 30 minutos</strong> mediante Random Forest sobre 221 features temporales derivadas de 30 tags de proceso — PR-AUC = 0.795, Recall = 79.5% (vs. PR-AUC = 0.663 del baseline de umbral).</li>
+<li><strong>Diagnóstico de causa raíz CLAY/UF</strong> con exactitud del 93.1% mediante regla física de nivel de lecho, con LightGBM como respaldo ante fallas de sensor.</li>
+<li><strong>Cuantificación de la brecha de datos</strong> para alertas preventivas de 2h: el Componente B alcanza PR-AUC = 0.134 con datos de sensor online, y se demuestra cuantitativamente que la incorporación de análisis granulométrico de laboratorio es el factor limitante para mejorar substancialmente este horizonte.</li>
+</ol>
+<p>Los resultados son consistentes con la física del proceso y sugieren que el framework es transferible a plantas con espesadores similares, sujeto a re-entrenamiento sobre datos reales de planta.</p>
 </div>
 </div>
 </div>
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs jp-mod-noInput celltag_hide-input" id="cell-id=r03-setup">
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=r04-problema">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=r04-contexto">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <hr/>
-<h2 id="1.-El-Problema-Operacional">1. El Problema Operacional<a class="anchor-link" href="#1.-El-Problema-Operacional">¶</a></h2><h3 id="%C2%BFQu%C3%A9-es-un-espesador-y-por-qu%C3%A9-importa-la-turbidez?">¿Qué es un espesador y por qué importa la turbidez?<a class="anchor-link" href="#%C2%BFQu%C3%A9-es-un-espesador-y-por-qu%C3%A9-importa-la-turbidez?">¶</a></h3><p>Un <strong>espesador convencional</strong> es el equipo central del circuito de recuperación de agua en una planta concentradora de cobre/molibdeno. Su función es separar los sólidos finos del agua de proceso, permitiendo recircular el agua clarificada al circuito de flotación.</p>
-<pre><code>    Alimentación (pulpa diluida)
-           ↓
-    ┌──────────────────────────────┐
-    │    ESPESADOR CONVENCIONAL    │
-    │                              │
-    │  ← ← ← Rastrillo → → →      │
-    │         (lecho de lodos)     │
-    └──────────────────────────────┘
-           ↓                ↓
-    Underflow (lodos)   Overflow (agua clarificada)
-    (55–68% sólidos)    ← TURBIDEZ ← objetivo
-</code></pre>
-<h3 id="%C2%BFQu%C3%A9-es-una-crisis-de-turbidez?">¿Qué es una crisis de turbidez?<a class="anchor-link" href="#%C2%BFQu%C3%A9-es-una-crisis-de-turbidez?">¶</a></h3><p>Una <strong>crisis de turbidez</strong> ocurre cuando el agua de overflow supera los <strong>100 NTU de forma sostenida por 20 minutos o más</strong>. Esto indica que partículas finas están escapando del espesador hacia el circuito de flotación.</p>
-<p><strong>Consecuencias operacionales:</strong></p>
+<h2 id="1.-Contexto-T%C3%A9cnico-del-Proceso">1. Contexto Técnico del Proceso<a class="anchor-link" href="#1.-Contexto-T%C3%A9cnico-del-Proceso">¶</a></h2><h3 id="Din%C3%A1mica-de-turbidez-en-espesadores-convencionales">Dinámica de turbidez en espesadores convencionales<a class="anchor-link" href="#Din%C3%A1mica-de-turbidez-en-espesadores-convencionales">¶</a></h3><p>En un espesador de rastrillos, el overflow clarificado debe mantenerse por debajo de un límite de turbidez operacional (típicamente 50–100 NTU según el circuito aguas abajo). El mecanismo de clarificación depende de la formación y mantenimiento de un <strong>lecho de lodos</strong> cohesivo que actúe como filtro profundo, asistido por la adición de floculante de alto peso molecular.</p>
+<p>La turbidez del overflow resulta de la competencia entre dos procesos:</p>
 <ul>
-<li>💧 Pérdida de agua de proceso recuperada (costo directo)</li>
-<li>⚗️ Contaminación del agua de flotación → caída de recuperación de Cu/Mo</li>
-<li>🌊 Riesgo de impacto ambiental en caso de descarga</li>
-<li>🔧 Intervención manual de emergencia (ajuste de floculante, caudal de purga)</li>
+<li><strong>Sedimentación</strong> de partículas floculadas hacia el lecho</li>
+<li><strong>Arrastre</strong> de finos no floculados o re-suspendidos hacia la zona de overflow</li>
 </ul>
-<h3 id="El-problema-de-la-detecci%C3%B3n-tard%C3%ADa">El problema de la detección tardía<a class="anchor-link" href="#El-problema-de-la-detecci%C3%B3n-tard%C3%ADa">¶</a></h3><p>Con el sistema actual (monitoreo visual + alarmas de umbral), el operador recibe aviso <strong>cuando la crisis ya ocurrió</strong> (NTU &gt; 100). El tiempo de respuesta para aplicar la acción correctiva y ver efecto es de <strong>15–30 minutos adicionales</strong>.</p>
-<p><strong>Objetivo de TWS:</strong> generar alertas con <strong>30 minutos de anticipación</strong>, cuando el proceso todavía está en zona degradada pero aún no es crisis.</p>
+<p>Este balance es perturbado por dos modos de falla distintos que TWS busca identificar:</p>
+<table>
+<thead>
+<tr>
+<th>Modo</th>
+<th>Causa raíz</th>
+<th>Mecanismo de turbidez</th>
+<th>Señales precursoras</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>CLAY</strong></td>
+<td>Aumento de fracción de arcillas en alimentación (ej. kaolinita, illita)</td>
+<td>Arcillas interfieren con floculación → finos no capturados → lecho alto y rígido</td>
+<td>↑ Clay index, ↑ pH feed, ↑ BedLevel, ↑ RakeTorque</td>
+</tr>
+<tr>
+<td><strong>UF</strong></td>
+<td>Degradación del sistema de purga de underflow (bomba, válvula, taponamiento)</td>
+<td>Acumulación de sólidos → colapso del lecho → resuspensión masiva</td>
+<td>↓ Qu_m3h, ↑ Solids_u_pct, BedLevel moderado</td>
+</tr>
+</tbody>
+</table>
+<h3 id="Por-qu%C3%A9-la-detecci%C3%B3n-temprana-es-t%C3%A9cnicamente-dif%C3%ADcil">Por qué la detección temprana es técnicamente difícil<a class="anchor-link" href="#Por-qu%C3%A9-la-detecci%C3%B3n-temprana-es-t%C3%A9cnicamente-dif%C3%ADcil">¶</a></h3><p>El principal desafío es que ambos modos de falla exhiben señales precursoras <strong>débiles y de baja relación señal/ruido</strong> en el espacio de sensores estándar de planta:</p>
+<ul>
+<li>La turbidez medida (<code>Overflow_Turb_NTU</code>) es la señal más discriminante, pero por definición solo detecta el problema cuando ya está en curso.</li>
+<li>Las señales upstream (BedLevel, RakeTorque, pH) varían lentamente y tienen alta varianza natural, dificultando la detección de tendencias incipientes.</li>
+<li>El modo CLAY requiere información de composición mineralógica que no está disponible en tiempo real en la mayoría de las plantas — este es el <strong>cuello de botella fundamental</strong> para la anticipación a largo horizonte.</li>
+</ul>
+<h3 id="Definici%C3%B3n-de-evento-para-modelado">Definición de evento para modelado<a class="anchor-link" href="#Definici%C3%B3n-de-evento-para-modelado">¶</a></h3><p>Se definió como <strong>evento sostenido de turbidez</strong> toda secuencia de ≥ 4 puntos consecutivos (≥ 20 min) con turbidez limpia &gt; 100 NTU. El target de predicción es <code>target_event_30m</code>: el evento desplazado 6 puntos (30 min) hacia el pasado, de modo que el modelo predice si <strong>en los próximos 30 minutos</strong> ocurrirá un evento.</p>
 </div>
 </div>
 </div>
@@ -7900,161 +7895,129 @@ Sistema Inteligente de Detección Temprana de Crisis de Turbidez
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <hr/>
-<h2 id="2.-El-Dataset">2. El Dataset<a class="anchor-link" href="#2.-El-Dataset">¶</a></h2><p>TWS fue desarrollado y evaluado sobre un <strong>dataset sintético operacionalmente realista</strong> de 90 días de operación continua, generado con un simulador de proceso calibrado para reproducir el comportamiento de un espesador de Cu/Mo.</p>
-<h3 id="Caracter%C3%ADsticas-principales">Características principales<a class="anchor-link" href="#Caracter%C3%ADsticas-principales">¶</a></h3><table>
+<h2 id="2.-Dataset-Sint%C3%A9tico-Calibrado">2. Dataset Sintético Calibrado<a class="anchor-link" href="#2.-Dataset-Sint%C3%A9tico-Calibrado">¶</a></h2><h3 id="Justificaci%C3%B3n-del-enfoque-sint%C3%A9tico">Justificación del enfoque sintético<a class="anchor-link" href="#Justificaci%C3%B3n-del-enfoque-sint%C3%A9tico">¶</a></h3><p>La ausencia de datos históricos etiquetados con causa raíz (CLAY/UF) en la mayoría de las plantas justifica el desarrollo sobre un simulador calibrado. El objetivo no es reemplazar datos reales, sino <strong>demostrar el framework metodológico</strong> y cuantificar la brecha de rendimiento esperada al migrar a datos reales.</p>
+<p>El simulador (<code>src/simulate_fixed.py</code>) implementa:</p>
+<ul>
+<li><strong>Balance de masa dinámico</strong> sobre sólidos y agua, con lecho de lodos modelado como variable de estado</li>
+<li><strong>Modelo de estrés compuesto</strong> con pesos calibrados: finos (0.22), carga (0.24), variabilidad (0.13), underflow (0.31), eficiencia de floculante (0.10)</li>
+<li><strong>Cadena causal pH→floculante→turbidez</strong>: Clay_idx↑ → pH↑ → Floc_effectiveness↓ → turbidez↑</li>
+<li><strong>Fallas de sensor realistas</strong>: spikes, stuck values, drift y datos faltantes inyectados post-simulación</li>
+<li><strong>Calibración automática</strong> de parámetros via búsqueda binaria sobre <code>scale</code> para alcanzar 5% ± 0.6% de tasa de eventos</li>
+</ul>
+<h3 id="Caracter%C3%ADsticas-del-dataset">Características del dataset<a class="anchor-link" href="#Caracter%C3%ADsticas-del-dataset">¶</a></h3><table>
 <thead>
 <tr>
-<th>Característica</th>
+<th>Parámetro</th>
 <th>Valor</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>Período simulado</td>
-<td>90 días</td>
+<td>Período</td>
+<td>90 días (frecuencia 5 min)</td>
 </tr>
 <tr>
-<td>Frecuencia de muestreo</td>
-<td>5 minutos</td>
-</tr>
-<tr>
-<td>Total de registros</td>
+<td>Observaciones</td>
 <td>25,920</td>
 </tr>
 <tr>
-<td>Variables de proceso (tags)</td>
-<td>30 sensores reales de planta</td>
+<td>Variables totales</td>
+<td>43 (30 tags de planta + 13 latentes/derivadas)</td>
 </tr>
 <tr>
-<td>Variables latentes (solo simulador)</td>
-<td>excluidas del modelo</td>
+<td>Features para modelado (<code>FEATURES_PROD</code>)</td>
+<td>221 (solo tags observables en planta real)</td>
+</tr>
+<tr>
+<td>Tasa de eventos sostenidos</td>
+<td>5.1% (1,326 puntos)</td>
+</tr>
+<tr>
+<td>Campañas CLAY</td>
+<td>3 episodios · días 10, 38, 65 · 16 días totales</td>
+</tr>
+<tr>
+<td>Campañas UF</td>
+<td>3 episodios · días 20, 52, 78 · 12 días totales</td>
 </tr>
 </tbody>
 </table>
-<h3 id="Distribuci%C3%B3n-de-zonas-operacionales">Distribución de zonas operacionales<a class="anchor-link" href="#Distribuci%C3%B3n-de-zonas-operacionales">¶</a></h3><table>
+<h3 id="KPIs-operacionales-simulados">KPIs operacionales simulados<a class="anchor-link" href="#KPIs-operacionales-simulados">¶</a></h3><table>
 <thead>
 <tr>
 <th>Zona</th>
 <th>Criterio (turbidez clean)</th>
-<th>Fracción del tiempo</th>
+<th>Fracción</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>🟢 <strong>Verde</strong></td>
+<td>Verde</td>
 <td>&lt; 50 NTU</td>
-<td><strong>77.8%</strong></td>
+<td>77.8%</td>
 </tr>
 <tr>
-<td>🟡 <strong>Degradado</strong></td>
+<td>Degradado</td>
 <td>50 – 100 NTU</td>
 <td>12.8%</td>
 </tr>
 <tr>
-<td>🔴 <strong>Crisis</strong></td>
+<td>Crisis sostenida</td>
 <td>&gt; 100 NTU, ≥ 20 min</td>
 <td><strong>5.1%</strong></td>
 </tr>
 </tbody>
 </table>
-<h3 id="Reg%C3%ADmenes-de-perturbaci%C3%B3n-simulados">Regímenes de perturbación simulados<a class="anchor-link" href="#Reg%C3%ADmenes-de-perturbaci%C3%B3n-simulados">¶</a></h3><p>Se simularon dos tipos de perturbación distribuidos a lo largo del período:</p>
-<table>
-<thead>
-<tr>
-<th>Régimen</th>
-<th>Causa</th>
-<th>Episodios</th>
-<th>Días totales</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong>CLAY</strong></td>
-<td>Ingreso de arcilla fina al feedwell (sube Clay_idx)</td>
-<td>3 campañas</td>
-<td>16 días</td>
-</tr>
-<tr>
-<td><strong>UF</strong></td>
-<td>Degradación del underflow (bomba/válvula de purga)</td>
-<td>3 campañas</td>
-<td>12 días</td>
-</tr>
-<tr>
-<td><strong>NORMAL</strong></td>
-<td>Operación sin perturbación</td>
-<td>—</td>
-<td>62 días</td>
-</tr>
-</tbody>
-</table>
-<h3 id="Fidelidad-operacional-del-dataset">Fidelidad operacional del dataset<a class="anchor-link" href="#Fidelidad-operacional-del-dataset">¶</a></h3><p>El simulador inyecta <strong>fallas de sensor realistas</strong> en las señales medidas:</p>
-<ul>
-<li>Spikes (picos instantáneos)</li>
-<li>Valores pegados (stuck values)</li>
-<li>Deriva gradual (drift)</li>
-<li>Datos faltantes (~1.5% del tiempo)</li>
-</ul>
-<p>Los modelos de TWS utilizan exclusivamente la <strong>señal medida con ruido</strong> (como ocurriría en producción real), no los valores limpios del simulador.</p>
+<h3 id="Variables-latentes-excluidas-del-modelado">Variables latentes excluidas del modelado<a class="anchor-link" href="#Variables-latentes-excluidas-del-modelado">¶</a></h3><p>Las siguientes variables del simulador <strong>no se usan como features</strong> por no ser observables en planta real:
+<code>Clay_idx</code>, <code>UF_capacity_factor</code>, <code>Overflow_Turb_NTU_clean</code>, <code>Floc_effectiveness</code>, <code>pH_clean</code>.
+Solo se usan para la generación de etiquetas y validación interna del simulador.</p>
 </div>
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=r06-arquitectura">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=r06-metodologia">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <hr/>
-<h2 id="3.-Arquitectura-del-Sistema-TWS">3. Arquitectura del Sistema TWS<a class="anchor-link" href="#3.-Arquitectura-del-Sistema-TWS">¶</a></h2><p>TWS está compuesto por <strong>tres componentes</strong> que operan en paralelo sobre el flujo de datos del proceso:</p>
-<pre><code>══════════════════════════════════════════════════════════════════════
-                    FLUJO DE DATOS EN TIEMPO REAL
-           (30 tags de proceso · frecuencia 5 min)
-══════════════════════════════════════════════════════════════════════
-                             │
-              ┌──────────────┼──────────────┐
-              ▼              ▼              ▼
-   ┌──────────────────┐  ┌─────────────┐  ┌──────────────────┐
-   │  COMPONENTE A    │  │ COMPONENTE B│  │  COMPONENTE C    │
-   │  Alerta Temprana │  │  Alerta     │  │  Diagnóstico     │
-   │  (30 min)        │  │  Preventiva │  │  CLAY / UF       │
-   │                  │  │  (2 h)      │  │                  │
-   │  Random Forest   │  │  LightGBM   │  │  Regla BedLevel  │
-   │  PR-AUC = 0.795  │  │  PR-AUC     │  │  + LightGBM      │
-   │  Recall = 79.5%  │  │  = 0.134    │  │  Acc = 93.1%     │
-   └──────────────────┘  └─────────────┘  └──────────────────┘
-              │                                    │
-              ▼                                    ▼
-    ⚠️ ALERTA EN SALA DE           🔍 CAUSA: CLAY → floculante
-       CONTROL                          UF    → purga
-══════════════════════════════════════════════════════════════════════
-</code></pre>
+<h2 id="3.-Metodolog%C3%ADa-de-Modelado">3. Metodología de Modelado<a class="anchor-link" href="#3.-Metodolog%C3%ADa-de-Modelado">¶</a></h2><h3 id="Feature-engineering">Feature engineering<a class="anchor-link" href="#Feature-engineering">¶</a></h3><p>A partir de los 30 tags de proceso se generaron 221 features (<code>FEATURES_PROD</code>) mediante:</p>
+<ul>
+<li><strong>Estadísticas rolling</strong>: media, desviación estándar, máximo, mínimo — ventanas de 15 min, 30 min, 1 h, 6 h, 12 h, 24 h</li>
+<li><strong>Lags temporales</strong>: 1, 3, 6, 12 puntos (5 min a 1 h)</li>
+<li><strong>Deltas</strong>: primera diferencia (Δ5min) y delta-6 (Δ30min)</li>
+<li><strong>Pendientes de regresión lineal</strong>: ventanas 60 min y 120 min para variables de tendencia lenta (BedLevel, pH, Qu, RakeTorque)</li>
+<li><strong>Features cíclicas de tiempo</strong>: <code>hour_sin</code>, <code>hour_cos</code>, <code>dow_sin</code>, <code>dow_cos</code></li>
+</ul>
+<p>Las variables con información de régimen (<code>is_CLAY</code>, <code>is_UF</code>) fueron <strong>explícitamente excluidas</strong> del conjunto de features de producción por constituir data leakage — no son observables en operación real.</p>
+<h3 id="Split-temporal-y-validaci%C3%B3n-cruzada">Split temporal y validación cruzada<a class="anchor-link" href="#Split-temporal-y-validaci%C3%B3n-cruzada">¶</a></h3><p>Se utilizó un <strong>split temporal estricto en el día 60</strong> (no aleatorio), preservando la estructura de dependencia temporal de la serie:</p>
 <table>
 <thead>
 <tr>
-<th>Componente</th>
-<th>Pregunta que responde</th>
-<th>Cuándo opera</th>
+<th>Conjunto</th>
+<th>Período</th>
+<th>Observaciones</th>
+<th>Tasa de eventos</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><strong>A — Alerta Temprana</strong></td>
-<td>¿Habrá crisis en los próximos 30 min?</td>
-<td>Siempre (continuo)</td>
+<td>Entrenamiento</td>
+<td>Días 0–60</td>
+<td>17,280</td>
+<td>5.62%</td>
 </tr>
 <tr>
-<td><strong>B — Alerta Preventiva</strong></td>
-<td>¿Hay riesgo de degradación en las próximas 2 h?</td>
-<td>Solo en zona verde</td>
-</tr>
-<tr>
-<td><strong>C — Diagnóstico</strong></td>
-<td>¿La causa es CLAY o falla de underflow?</td>
-<td>Cuando hay un evento</td>
+<td>Prueba (held-out)</td>
+<td>Días 60–90</td>
+<td>8,592</td>
+<td>4.13%</td>
 </tr>
 </tbody>
 </table>
+<p>La validación cruzada usó <code>TimeSeriesSplit(n_splits=3, test_size=2800)</code>, garantizando que cada fold de validación siempre esté temporalmente posterior al fold de entrenamiento. <strong>No se usó KFold aleatorio</strong>, que introduciría leakage temporal.</p>
+<h3 id="M%C3%A9trica-principal:-PR-AUC-(Average-Precision)">Métrica principal: PR-AUC (Average Precision)<a class="anchor-link" href="#M%C3%A9trica-principal:-PR-AUC-(Average-Precision)">¶</a></h3><p>Con una tasa de eventos del 5%, la curva Precisión-Recall es más informativa que ROC-AUC: el área bajo ROC puede ser alta (~0.98) incluso para modelos con escasa utilidad práctica en la clase minoritaria. PR-AUC es sensible al balance entre falsas alarmas y eventos perdidos — el trade-off operacionalmente relevante.</p>
+<h3 id="Manejo-del-desbalance-de-clases">Manejo del desbalance de clases<a class="anchor-link" href="#Manejo-del-desbalance-de-clases">¶</a></h3><p>Se evaluó SMOTE (sobremuestreo sintético) vs. <code>class_weight='balanced'</code>. El análisis mostró que <strong>SMOTE degrada consistentemente el PR-AUC</strong> en validación temporal (RF: −7.9 pp, LightGBM: −4.6 pp), probablemente por generar interpolaciones sintéticas que violan la estructura temporal. Se adoptó <code>class_weight='balanced_subsample'</code> para Random Forest.</p>
 </div>
 </div>
 </div>
@@ -8065,40 +8028,57 @@ Sistema Inteligente de Detección Temprana de Crisis de Turbidez
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <hr/>
-<h2 id="4.-Componente-A-%E2%80%94-Alerta-Temprana-(30-minutos)">4. Componente A — Alerta Temprana (30 minutos)<a class="anchor-link" href="#4.-Componente-A-%E2%80%94-Alerta-Temprana-(30-minutos)">¶</a></h2><h3 id="%C2%BFQu%C3%A9-hace?">¿Qué hace?<a class="anchor-link" href="#%C2%BFQu%C3%A9-hace?">¶</a></h3><p>El Componente A predice, en cada instante, si el proceso entrará en crisis de turbidez (<strong>&gt; 100 NTU sostenido por ≥ 20 minutos</strong>) dentro de los <strong>próximos 30 minutos</strong>. El modelo se ejecuta en forma continua, actualizando la predicción con cada nuevo punto de datos (cada 5 min).</p>
-<h3 id="Metodolog%C3%ADa">Metodología<a class="anchor-link" href="#Metodolog%C3%ADa">¶</a></h3><ul>
-<li><strong>Algoritmo:</strong> Random Forest (ensemble de 200 árboles de decisión)</li>
-<li><strong>Variables de entrada:</strong> 221 features derivadas de 30 tags de proceso (rolling statistics, lags, deltas)</li>
-<li><strong>Balance de clases:</strong> peso automático por clase (<code>balanced_subsample</code>) — sin submuestreo artificial</li>
-<li><strong>Validación:</strong> split temporal estricto — entrenamiento en primeros 60 días, prueba en últimos 30 días</li>
-</ul>
-<h3 id="Resultados-en-datos-de-prueba">Resultados en datos de prueba<a class="anchor-link" href="#Resultados-en-datos-de-prueba">¶</a></h3><table>
+<h2 id="4.-Componente-A-%E2%80%94-Alerta-Temprana-a-30-Minutos">4. Componente A — Alerta Temprana a 30 Minutos<a class="anchor-link" href="#4.-Componente-A-%E2%80%94-Alerta-Temprana-a-30-Minutos">¶</a></h2><h3 id="Selecci%C3%B3n-de-modelo-y-tuning">Selección de modelo y tuning<a class="anchor-link" href="#Selecci%C3%B3n-de-modelo-y-tuning">¶</a></h3><p>Se compararon tres algoritmos en validación cruzada temporal (TOP-30 features por mutual information, parámetros por defecto):</p>
+<table>
 <thead>
 <tr>
-<th>Métrica</th>
-<th>Baseline (regla NTU &gt; 80)</th>
-<th><strong>TWS Componente A</strong></th>
-<th>Mejora</th>
+<th>Algoritmo</th>
+<th>CV PR-AUC</th>
+<th>CV ROC-AUC</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>Eventos detectados (Recall)</td>
-<td>~65%</td>
-<td><strong>79.5%</strong> (416/523)</td>
-<td>+14.5 pp</td>
+<td><strong>Random Forest</strong></td>
+<td><strong>0.755</strong></td>
+<td><strong>0.977</strong></td>
 </tr>
 <tr>
-<td>Alarmas falsas (30 días)</td>
-<td>alta</td>
-<td><strong>162</strong></td>
-<td>—</td>
+<td>LightGBM</td>
+<td>0.737</td>
+<td>0.973</td>
 </tr>
+<tr>
+<td>Logistic Regression</td>
+<td>0.716</td>
+<td>0.975</td>
+</tr>
+</tbody>
+</table>
+<p>Random Forest fue seleccionado como modelo base para tuning. Se realizó <code>RandomizedSearchCV</code> (n_iter=20, 60 fits totales) sobre el espacio:
+<code>n_estimators</code> ∈ {100, 200}, <code>max_depth</code> ∈ {5, 10, 15, None}, <code>min_samples_leaf</code> ∈ {10, 20, 30}, <code>max_features</code> ∈ {0.3, 0.5, 'sqrt'}, <code>class_weight</code> ∈ {'balanced', 'balanced_subsample'}.</p>
+<p><strong>Hiperparámetros óptimos:</strong> n_estimators=200, max_depth=None, min_samples_leaf=30, max_features='sqrt', class_weight='balanced_subsample'.</p>
+<h3 id="Resultados-en-conjunto-de-prueba-(d%C3%ADas-60%E2%80%9390,-221-features)">Resultados en conjunto de prueba (días 60–90, 221 features)<a class="anchor-link" href="#Resultados-en-conjunto-de-prueba-(d%C3%ADas-60%E2%80%9390,-221-features)">¶</a></h3><table>
+<thead>
+<tr>
+<th>Métrica</th>
+<th>Baseline (NTU &gt; 80)</th>
+<th><strong>RF Tuned</strong></th>
+<th>Δ</th>
+</tr>
+</thead>
+<tbody>
 <tr>
 <td>PR-AUC</td>
 <td>0.663</td>
 <td><strong>0.795</strong></td>
 <td>+13.2 pp</td>
+</tr>
+<tr>
+<td>ROC-AUC</td>
+<td>—</td>
+<td><strong>0.986</strong></td>
+<td>—</td>
 </tr>
 <tr>
 <td>F1-macro</td>
@@ -8107,28 +8087,63 @@ Sistema Inteligente de Detección Temprana de Crisis de Turbidez
 <td>+17.5 pp</td>
 </tr>
 <tr>
-<td>ROC-AUC</td>
+<td>Recall (eventos detectados)</td>
+<td>~65%</td>
+<td><strong>79.5%</strong> (416/523)</td>
+<td>+14.5 pp</td>
+</tr>
+<tr>
+<td>Falsas alarmas (30 días)</td>
+<td>alta</td>
+<td>162</td>
 <td>—</td>
-<td><strong>0.986</strong></td>
+</tr>
+<tr>
+<td>Umbral óptimo (F1-macro)</td>
+<td>—</td>
+<td><strong>0.739</strong></td>
 <td>—</td>
 </tr>
 </tbody>
 </table>
-<blockquote>
-<p><strong>Interpretación:</strong> El modelo detecta 4 de cada 5 crisis con anticipación. Las 107 crisis no detectadas son principalmente eventos de muy corta duración o de aparición muy abrupta.</p>
-</blockquote>
-<h3 id="Variables-m%C3%A1s-influyentes-(SHAP)">Variables más influyentes (SHAP)<a class="anchor-link" href="#Variables-m%C3%A1s-influyentes-(SHAP)">¶</a></h3><p>Las señales que más contribuyen a la predicción, en orden de importancia:</p>
-<ol>
-<li><strong>Turbidez medida</strong> — promedios móviles 15 min y 30 min (señal más directa)</li>
-<li><strong>Caudal de underflow</strong> — caída de caudal precede al colapso del lecho</li>
-<li><strong>Nivel de lecho</strong> — promedio de 12 h y 24 h indica acumulación progresiva</li>
-<li><strong>Torque del rastrillo</strong> — refleja la densidad y resistencia del lecho de lodos</li>
-</ol>
-<h3 id="Umbral-operacional">Umbral operacional<a class="anchor-link" href="#Umbral-operacional">¶</a></h3><p>El umbral óptimo de probabilidad para emitir alarma es <strong>P(crisis) ≥ 0.74</strong>. Este umbral maximiza el F1-macro en datos de prueba y puede ajustarse según la tolerancia operacional al riesgo:</p>
-<ul>
-<li>Umbral más bajo → más alarmas, menos eventos perdidos</li>
-<li>Umbral más alto → menos alarmas falsas, mayor riesgo de no detectar</li>
-</ul>
+<h3 id="Interpretabilidad-f%C3%ADsica-via-SHAP">Interpretabilidad física via SHAP<a class="anchor-link" href="#Interpretabilidad-f%C3%ADsica-via-SHAP">¶</a></h3><p>El análisis SHAP sobre el conjunto de prueba revela que las features más influyentes son físicamente coherentes con el proceso:</p>
+<table>
+<thead>
+<tr>
+<th>Rank</th>
+<th>Feature</th>
+<th>Interpretación física</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><code>Overflow_Turb_NTU__rmean_15m</code></td>
+<td>Turbidez rolling 15 min — señal más directa del estado actual</td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>Overflow_Turb_NTU__rmean_30m</code></td>
+<td>Confirma tendencia sostenida vs. spike transitorio</td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>Qu_m3h</code></td>
+<td>Caída de caudal de underflow precede al colapso del lecho</td>
+</tr>
+<tr>
+<td>4</td>
+<td><code>BedLevel_m__rmean_12h</code></td>
+<td>Acumulación progresiva del lecho en escala de turno</td>
+</tr>
+<tr>
+<td>5</td>
+<td><code>RakeTorque_pct__rmean_1h</code></td>
+<td>Resistencia del lecho — proxy de densidad y cohesividad</td>
+</tr>
+</tbody>
+</table>
+<p>La dominancia de <code>Overflow_Turb_NTU</code> rolling sobre otras señales confirma que el modelo está usando primariamente el <strong>estado de degradación ya en curso</strong> como predictor de crisis inminente — comportamiento esperado para un horizonte de 30 minutos. El valor operacional está en la anticipación estructurada respecto al umbral fijo, no en la detección de causas upstream.</p>
 </div>
 </div>
 </div>
@@ -8139,9 +8154,8 @@ Sistema Inteligente de Detección Temprana de Crisis de Turbidez
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <hr/>
-<h2 id="5.-Componente-B-%E2%80%94-Alerta-Preventiva-(2-horas)">5. Componente B — Alerta Preventiva (2 horas)<a class="anchor-link" href="#5.-Componente-B-%E2%80%94-Alerta-Preventiva-(2-horas)">¶</a></h2><h3 id="%C2%BFQu%C3%A9-hace?">¿Qué hace?<a class="anchor-link" href="#%C2%BFQu%C3%A9-hace?">¶</a></h3><p>El Componente B intenta anticipar el deterioro del proceso <strong>antes de que salga de la zona verde</strong> (NTU &lt; 50). Opera solo cuando el proceso está en condición normal, con un horizonte de alerta de <strong>2 horas</strong>.</p>
-<h3 id="Motivaci%C3%B3n-operacional">Motivación operacional<a class="anchor-link" href="#Motivaci%C3%B3n-operacional">¶</a></h3><p>El Componente A es reactivo: cuando dispara, el proceso ya está en zona degradada (NTU ~ 80). El Componente B busca la ventana de oportunidad más temprana, cuando el operador aún tiene máxima flexibilidad de acción (ajustar floculante, reducir carga, aumentar purga de manera preventiva).</p>
-<h3 id="An%C3%A1lisis-de-ventana-real-de-anticipaci%C3%B3n">Análisis de ventana real de anticipación<a class="anchor-link" href="#An%C3%A1lisis-de-ventana-real-de-anticipaci%C3%B3n">¶</a></h3><p>Antes de modelar, se analizó cuánto tiempo real existe desde la zona verde hasta la crisis:</p>
+<h2 id="5.-Componente-B-%E2%80%94-Alerta-Preventiva-a-2-Horas">5. Componente B — Alerta Preventiva a 2 Horas<a class="anchor-link" href="#5.-Componente-B-%E2%80%94-Alerta-Preventiva-a-2-Horas">¶</a></h2><h3 id="Motivaci%C3%B3n-y-definici%C3%B3n-del-problema">Motivación y definición del problema<a class="anchor-link" href="#Motivaci%C3%B3n-y-definici%C3%B3n-del-problema">¶</a></h3><p>El Componente A opera cuando el proceso ya está en zona degradada. El Componente B busca detectar la transición desde zona verde (NTU &lt; 50) antes de que ocurra, con un horizonte de 2 horas. El target es <code>green_to_degraded_2h</code>: evento de degradación en los próximos 24 puntos (2 h), condicionado a que el proceso esté actualmente en zona verde.</p>
+<h3 id="An%C3%A1lisis-de-ventana-real-de-anticipaci%C3%B3n">Análisis de ventana real de anticipación<a class="anchor-link" href="#An%C3%A1lisis-de-ventana-real-de-anticipaci%C3%B3n">¶</a></h3><p>Antes de modelar, se analizó la distribución real del tiempo desde zona verde hasta degradación:</p>
 </div>
 </div>
 </div>
@@ -8158,52 +8172,20 @@ Sistema Inteligente de Detección Temprana de Crisis de Turbidez
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=r10-modelo-b-resultados">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=r10-lead-time-analisis">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p><strong>Hallazgo clave del análisis de ventana temporal:</strong></p>
+<p><strong>Hallazgos del análisis de lead time:</strong></p>
 <ul>
-<li>Tiempo promedio desde zona verde hasta zona degradada (NTU &gt; 50): <strong>26 minutos</strong> (mediana: 20 min)</li>
-<li>El <strong>71% de los eventos de degradación</strong> ocurren en los primeros 30 minutos tras salir de zona verde</li>
-<li>El proceso en zona verde (NTU ≈ 38) <strong>no exhibe señales claras</strong> de la perturbación futura con 2 horas de anticipación</li>
+<li>Tiempo promedio desde zona verde hasta NTU &gt; 50: <strong>26 min</strong> (mediana: 20 min)</li>
+<li>El <strong>71% de las degradaciones</strong> ocurren dentro de los 30 minutos posteriores a la última observación verde</li>
+<li>La NTU medida en el instante de ingreso al target 2h está en <strong>~38 NTU</strong> (zona verde profunda)</li>
 </ul>
-<h3 id="Resultados-del-modelo">Resultados del modelo<a class="anchor-link" href="#Resultados-del-modelo">¶</a></h3><p>Se evaluaron dos configuraciones para cuantificar el impacto de distintas decisiones de diseño:</p>
-<table>
-<thead>
-<tr>
-<th>Configuración</th>
-<th>CV PR-AUC</th>
-<th>Test PR-AUC</th>
-<th>Nota</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>v1 — con variables de régimen (leakage)</td>
-<td>0.293</td>
-<td>0.191</td>
-<td>Variables no disponibles en producción</td>
-</tr>
-<tr>
-<td><strong>v2a — sin leakage, horizonte 2h</strong></td>
-<td>~0.28</td>
-<td><strong>0.134</strong></td>
-<td>✅ Configuración honesta recomendada</td>
-</tr>
-<tr>
-<td>v2b — sin leakage, horizonte 1h</td>
-<td>0.607</td>
-<td>0.071</td>
-<td>CV engañoso (sobreajuste en fold)</td>
-</tr>
-</tbody>
-</table>
-<blockquote>
-<p><strong>Resultado honesto (v2a):</strong> PR-AUC = 0.134, que representa un <strong>+48% relativo</strong> vs. el baseline de turbidez rolling.</p>
-</blockquote>
-<h3 id="An%C3%A1lisis-de-la-brecha-CV-%E2%86%92-Test">Análisis de la brecha CV → Test<a class="anchor-link" href="#An%C3%A1lisis-de-la-brecha-CV-%E2%86%92-Test">¶</a></h3>
+<p>Esto implica que para predecir un evento 2h antes, el modelo debe detectar señales upstream cuando la turbidez aún está en valores completamente normales — el problema de anticipación más difícil del sistema.</p>
+<h3 id="Experimentos-y-diagn%C3%B3stico-de-leakage">Experimentos y diagnóstico de leakage<a class="anchor-link" href="#Experimentos-y-diagn%C3%B3stico-de-leakage">¶</a></h3><p>Se identificó que la versión v1 del Componente B incluía variables de régimen (<code>is_CLAY</code>, <code>is_UF</code>) que presentaban <strong>100% de concordancia con la variable latente <code>Regime</code></strong> — información no observable en producción real. La eliminación de este leakage redujo el rendimiento de prueba en −5.7 pp, cuantificando exactamente el sesgo introducido.</p>
+<p>Se evaluaron además variantes con distinto horizonte de predicción:</p>
 </div>
 </div>
 </div>
@@ -8220,12 +8202,42 @@ Sistema Inteligente de Detección Temprana de Crisis de Turbidez
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=r11b-modelo-b-curva">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=r11b-tabla-modelos">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h3 id="Curva-Precisi%C3%B3n-Recall-del-Componente-B">Curva Precisión-Recall del Componente B<a class="anchor-link" href="#Curva-Precisi%C3%B3n-Recall-del-Componente-B">¶</a></h3>
+<table>
+<thead>
+<tr>
+<th>Configuración</th>
+<th>CV PR-AUC</th>
+<th>Test PR-AUC</th>
+<th>Obs.</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>v1: FEATURES_PROD + H=2h + n_splits=3</td>
+<td>0.293</td>
+<td>0.191</td>
+<td>Incluye leakage (is_CLAY/is_UF)</td>
+</tr>
+<tr>
+<td>v2a: FEATURES_B + H=2h + n_splits=2</td>
+<td>~0.28</td>
+<td><strong>0.134</strong></td>
+<td>✅ Sin leakage — configuración honesta</td>
+</tr>
+<tr>
+<td>v2b: FEATURES_B + H=1h + n_splits=2</td>
+<td>0.607</td>
+<td>0.071</td>
+<td>CV ilusorio — colapso de positivos en train</td>
+</tr>
+</tbody>
+</table>
+<p>La configuración recomendada (v2a) logra <strong>+48% relativo</strong> sobre el baseline de turbidez rolling, pero el nivel absoluto (PR-AUC = 0.134) es insuficiente para uso operacional autónomo.</p>
 </div>
 </div>
 </div>
@@ -8242,20 +8254,40 @@ Sistema Inteligente de Detección Temprana de Crisis de Turbidez
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=r12b-modelo-b-limitacion">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=r12b-limitacion-estructural">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h3 id="Por-qu%C3%A9-el-Componente-B-es-estructuralmente-dif%C3%ADcil">Por qué el Componente B es estructuralmente difícil<a class="anchor-link" href="#Por-qu%C3%A9-el-Componente-B-es-estructuralmente-dif%C3%ADcil">¶</a></h3><p>El rendimiento limitado del Componente B no es un problema de algoritmo o ajuste: es una <strong>limitación estructural de los datos disponibles</strong>.</p>
-<p><strong>Analogía meteorológica:</strong> predecir lluvia 2 horas antes requiere datos de presión atmosférica, humedad y sistemas frontales (variables exógenas). Con solo temperatura local, el modelo no puede anticipar el evento.</p>
-<p>En el espesador, la señal de que viene una perturbación por arcilla (CLAY) llega primero en el <strong>análisis granulométrico de laboratorio</strong> (4–8 horas de delay), no en los sensores de proceso. Sin esa información, el modelo opera "a ciegas" en zona verde.</p>
-<p><strong>Lo que el modelo sí aporta:</strong></p>
-<ul>
-<li>Combina tendencias de pH, nivel de lecho y torque para detectar presiones incipientes</li>
-<li>Mejora en +48% relativo sobre la regla simple de turbidez rolling</li>
-<li>Define claramente el límite de lo que es posible con datos de sensor online</li>
-</ul>
+<h3 id="Limitaci%C3%B3n-estructural:-la-brecha-de-datos-mineral%C3%B3gicos">Limitación estructural: la brecha de datos mineralógicos<a class="anchor-link" href="#Limitaci%C3%B3n-estructural:-la-brecha-de-datos-mineral%C3%B3gicos">¶</a></h3><p>El rendimiento limitado del Componente B no es atribuible a la elección de algoritmo ni a la ingeniería de features — es una <strong>limitación de información</strong>. En zona verde (NTU ≈ 38), los sensores de proceso no contienen señal suficiente para distinguir una operación normal de una que evolucionará hacia crisis en 2 horas.</p>
+<p>La señal predictiva a ese horizonte existe, pero reside en variables que típicamente no están disponibles en tiempo real:</p>
+<table>
+<thead>
+<tr>
+<th>Fuente de información</th>
+<th>Delay típico</th>
+<th>Impacto esperado en Comp. B</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Análisis granulométrico</strong> (% −200 mesh, % arcilla)</td>
+<td>4–8 h (lab)</td>
+<td>Alto — CLAY es predecible si se conoce la mineralogía de la alimentación</td>
+</tr>
+<tr>
+<td><strong>Datos de planificación minera</strong> (zona de extracción)</td>
+<td>8–24 h</td>
+<td>Medio — correlación con tipo de roca</td>
+</tr>
+<tr>
+<td><strong>Sensores en línea de partículas</strong> (FBRM, PVM)</td>
+<td>Tiempo real</td>
+<td>Alto — pero raramente disponibles en espesadores industriales</td>
+</tr>
+</tbody>
+</table>
+<p>Este resultado es en sí mismo un <strong>hallazgo técnico relevante</strong>: cuantifica con precisión qué información adicional es necesaria para mejorar el horizonte de anticipación, y provee la justificación técnica para instrumentación adicional o integración de datos de laboratorio.</p>
 </div>
 </div>
 </div>
@@ -8266,39 +8298,44 @@ Sistema Inteligente de Detección Temprana de Crisis de Turbidez
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <hr/>
-<h2 id="6.-Componente-C-%E2%80%94-Diagn%C3%B3stico-CLAY-vs.-UF">6. Componente C — Diagnóstico CLAY vs. UF<a class="anchor-link" href="#6.-Componente-C-%E2%80%94-Diagn%C3%B3stico-CLAY-vs.-UF">¶</a></h2><h3 id="%C2%BFQu%C3%A9-hace?">¿Qué hace?<a class="anchor-link" href="#%C2%BFQu%C3%A9-hace?">¶</a></h3><p>Cuando se detecta un evento (Componente A dispara), el Componente C determina la <strong>causa raíz</strong> del deterioro:</p>
-<ul>
-<li><strong>CLAY:</strong> ingreso de arcilla fina → lecho denso y rígido, torque elevado</li>
-<li><strong>UF (Underflow Failure):</strong> falla en la purga de lodos → acumulación gradual sin señal de lecho</li>
-</ul>
-<p>El diagnóstico correcto es crítico porque las <strong>acciones correctivas son opuestas</strong>:</p>
+<h2 id="6.-Componente-C-%E2%80%94-Diagn%C3%B3stico-de-Causa-Ra%C3%ADz:-CLAY-vs.-UF">6. Componente C — Diagnóstico de Causa Raíz: CLAY vs. UF<a class="anchor-link" href="#6.-Componente-C-%E2%80%94-Diagn%C3%B3stico-de-Causa-Ra%C3%ADz:-CLAY-vs.-UF">¶</a></h2><h3 id="Separabilidad-en-el-espacio-de-variables-reales">Separabilidad en el espacio de variables reales<a class="anchor-link" href="#Separabilidad-en-el-espacio-de-variables-reales">¶</a></h3><p>Se analizó la separabilidad entre modos CLAY y UF mediante el índice Δ/IQR para cada variable de planta disponible durante eventos. El nivel de lecho (<code>BedLevel_m</code>) emerge como el discriminador dominante:</p>
 <table>
 <thead>
 <tr>
-<th>Causa</th>
-<th>Acción correctiva principal</th>
+<th>Variable</th>
+<th>Δ/IQR (CLAY − UF)</th>
+<th>Interpretación física</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><strong>CLAY</strong></td>
-<td>Aumentar dosis de floculante · Dilución en feedwell · Reducir carga de alimentación</td>
+<td><code>BedLevel_m</code></td>
+<td><strong>+1.8</strong></td>
+<td>CLAY forma capa densa y rígida → lecho alto y sostenido</td>
 </tr>
 <tr>
-<td><strong>UF</strong></td>
-<td>Aumentar caudal de purga · Revisar bomba/válvula de underflow · Monitorear densidad</td>
+<td><code>RakeTorque_pct</code></td>
+<td>+0.9</td>
+<td>Mayor resistencia en lecho arcilloso</td>
+</tr>
+<tr>
+<td><code>Qu_m3h</code></td>
+<td>−1.2</td>
+<td>UF reduce caudal por obstrucción del sistema de purga</td>
+</tr>
+<tr>
+<td><code>Floc_gpt</code></td>
+<td>+0.4</td>
+<td>Mayor consumo de floculante en régimen CLAY</td>
+</tr>
+<tr>
+<td><code>Overflow_Turb_NTU</code></td>
+<td>~0</td>
+<td>Similar en ambos modos durante el evento</td>
 </tr>
 </tbody>
 </table>
-<blockquote>
-<p>Aplicar la acción de UF a un evento CLAY (o viceversa) puede <strong>agravar el evento</strong> en lugar de mitigarlo.</p>
-</blockquote>
-<h3 id="Hallazgo:-la-regla-simple-supera-al-modelo-ML">Hallazgo: la regla simple supera al modelo ML<a class="anchor-link" href="#Hallazgo:-la-regla-simple-supera-al-modelo-ML">¶</a></h3><p>El análisis de separabilidad reveló que el <strong>nivel de lecho</strong> (<code>BedLevel_m</code>) es el discriminador natural entre CLAY y UF:</p>
-<ul>
-<li><strong>CLAY</strong> forma una capa densa y rígida → <code>BedLevel_m</code> alto y sostenido (&gt; 1.9 m)</li>
-<li><strong>UF</strong> no acumula cama de lodos → <code>BedLevel_m</code> moderado (&lt; 1.9 m)</li>
-</ul>
-<table>
+<h3 id="Resultados:-regla-vs.-modelo-ML">Resultados: regla vs. modelo ML<a class="anchor-link" href="#Resultados:-regla-vs.-modelo-ML">¶</a></h3><table>
 <thead>
 <tr>
 <th>Método</th>
@@ -8315,47 +8352,41 @@ Sistema Inteligente de Detección Temprana de Crisis de Turbidez
 <td><strong>0.922</strong></td>
 </tr>
 <tr>
-<td>LightGBM TOP-30 features</td>
+<td>LightGBM TOP-30 (threshold=0.05)</td>
 <td>85.4%</td>
 <td>0.851</td>
 <td>0.836</td>
 </tr>
 </tbody>
 </table>
-<blockquote>
-<p><strong>La regla simple supera al modelo ML</strong> en todos los indicadores. Esto es una buena noticia operacional: el operador puede implementar la regla de <code>BedLevel</code> sin necesidad de software adicional.</p>
-</blockquote>
-<h3 id="Rol-del-modelo-LightGBM">Rol del modelo LightGBM<a class="anchor-link" href="#Rol-del-modelo-LightGBM">¶</a></h3><p>El LightGBM actúa como <strong>segunda opinión</strong> en dos situaciones específicas:</p>
+<p>La regla simple supera al modelo ML en todos los indicadores. Esto tiene una interpretación técnica directa: <strong>BedLevel_m captura el mecanismo diferenciador fundamental</strong> entre los dos modos de falla. El modelo ML, al tener acceso a 30 features adicionales, no puede mejorar sobre ese discriminador porque las demás variables aportan ruido marginal en el espacio de diagnóstico.</p>
+<h3 id="Rol-complementario-del-LightGBM">Rol complementario del LightGBM<a class="anchor-link" href="#Rol-complementario-del-LightGBM">¶</a></h3><p>El modelo ML es superior en dos escenarios específicos:</p>
 <ol>
-<li><strong>Falla de sensor de nivel de lecho</strong> (stuck, spike, datos faltantes): el modelo usa las otras 29 variables</li>
-<li><strong>Detección temprana de tipo de evento</strong>: el ML puede clasificar la causa antes de que <code>BedLevel</code> diverja significativamente</li>
+<li><strong>Falla del sensor de nivel de lecho</strong> (stuck, spike, datos faltantes): el modelo usa el vector completo de 30 tags</li>
+<li><strong>Diagnóstico temprano</strong>: el ML puede clasificar la causa antes de que BedLevel diverja significativamente del valor basal, usando la tendencia conjunta de Qu, Floc y pH</li>
 </ol>
-<h3 id="Resultado-operacional-del-diagn%C3%B3stico">Resultado operacional del diagnóstico<a class="anchor-link" href="#Resultado-operacional-del-diagn%C3%B3stico">¶</a></h3><p>En el set de prueba (364 eventos de crisis):</p>
-<table>
+<h3 id="Rendimiento-en-set-de-prueba-(n=364-eventos)">Rendimiento en set de prueba (n=364 eventos)<a class="anchor-link" href="#Rendimiento-en-set-de-prueba-(n=364-eventos)">¶</a></h3><table>
 <thead>
 <tr>
 <th></th>
-<th>Predicho CLAY</th>
-<th>Predicho UF</th>
+<th>Pred. CLAY</th>
+<th>Pred. UF</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><strong>Real CLAY</strong> (236 eventos)</td>
+<td><strong>Real CLAY</strong> (n=236)</td>
 <td>183 ✅</td>
 <td>53 ❌</td>
 </tr>
 <tr>
-<td><strong>Real UF</strong> (128 eventos)</td>
-<td>0 ✅</td>
+<td><strong>Real UF</strong> (n=128)</td>
+<td>0</td>
 <td>128 ✅</td>
 </tr>
 </tbody>
 </table>
-<ul>
-<li>Los 128 eventos UF se diagnostican con <strong>100% de exactitud</strong></li>
-<li>53 eventos CLAY son mal clasificados como UF — todos corresponden a eventos CLAY de intensidad baja donde el nivel de lecho no llegó a superar el umbral</li>
-</ul>
+<p>Los 53 eventos CLAY mal clasificados corresponden a campañas de baja intensidad donde el lecho no alcanzó el umbral de 1.9 m — exactamente el escenario donde el LightGBM agrega valor como segunda opinión.</p>
 </div>
 </div>
 </div>
@@ -8366,57 +8397,23 @@ Sistema Inteligente de Detección Temprana de Crisis de Turbidez
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <hr/>
-<h2 id="7.-Ventana-Operacional-Integrada">7. Ventana Operacional Integrada<a class="anchor-link" href="#7.-Ventana-Operacional-Integrada">¶</a></h2><p>Los tres componentes de TWS operan en forma coordinada. El siguiente timeline ilustra cómo se comportaría el sistema durante un evento típico de tipo CLAY:</p>
-<pre><code>TIEMPO  │  TURBIDEZ  │  ZONA        │  ACCIÓN DEL SISTEMA TWS
-────────┼────────────┼──────────────┼───────────────────────────────────────────
- T - 2h │   38 NTU   │  🟢 Verde    │  Comp. B: tendencia de pH y BedLevel al alza
-        │            │              │  → alerta preventiva (señal débil)
-────────┼────────────┼──────────────┼───────────────────────────────────────────
- T - 1h │   42 NTU   │  🟢 Verde    │  Comp. B: probabilidad aumenta
-        │            │              │  → operador en alerta, monitoreo activo
-────────┼────────────┼──────────────┼───────────────────────────────────────────
- T - 26m│   50 NTU   │  🟡 Degradado│  Proceso cruza a zona degradada
-        │            │              │  Comp. A: empieza a evaluar riesgo
-────────┼────────────┼──────────────┼───────────────────────────────────────────
- T - 30m│   80 NTU   │  🟡 Degradado│  ⚠️  ALERTA FIRME — Comp. A dispara
-        │            │              │  → Operador tiene 30 min para actuar
-        │            │              │  Comp. C: BedLevel &gt; 1.9m → diagnóstico CLAY
-        │            │              │  → Acción: aumentar floculante + dilución
-────────┼────────────┼──────────────┼───────────────────────────────────────────
-  T  0  │  100 NTU   │  🔴 CRISIS   │  Sin TWS: primer aviso recién aquí
-        │            │              │  Con TWS: acción correctiva ya en marcha
-════════╪════════════╪══════════════╪═══════════════════════════════════════════
-        │            │              │  VENTANA GANADA: ~30 minutos efectivos
+<h2 id="7.-Ventana-Operacional-Integrada">7. Ventana Operacional Integrada<a class="anchor-link" href="#7.-Ventana-Operacional-Integrada">¶</a></h2><p>El timeline siguiente ilustra cómo interactúan los tres componentes durante un evento típico de tipo CLAY, y dónde se sitúa el margen operacional ganado respecto al sistema actual:</p>
+<pre><code>TIEMPO  │ NTU CLEAN │ ZONA         │ TWS                                 │ SIN TWS
+────────┼───────────┼──────────────┼─────────────────────────────────────┼──────────────
+ T−2h   │   38 NTU  │ 🟢 Verde     │ Comp. B: pH↑ + BedLevel↑ detectado │ Sin señal
+        │           │              │ → alerta preventiva (señal débil)   │
+────────┼───────────┼──────────────┼─────────────────────────────────────┼──────────────
+ T−26m  │   50 NTU  │ 🟡 Degradado │ Comp. A activo                      │ Sin señal
+────────┼───────────┼──────────────┼─────────────────────────────────────┼──────────────
+ T−30m  │   80 NTU  │ 🟡 Degradado │ ⚠️ ALERTA FIRME (P=0.74)           │ Sin señal
+        │           │              │ Comp. C: BedLevel=2.1m → CLAY       │
+        │           │              │ → Acción: ↑ floculante + dilución   │
+────────┼───────────┼──────────────┼─────────────────────────────────────┼──────────────
+  T 0   │  100 NTU  │ 🔴 CRISIS    │ Acción correctiva ya en marcha      │ ⚠️ PRIMER AVISO
+════════╪═══════════╪══════════════╪═════════════════════════════════════╪══════════════
+GANANCIA│           │              │ ~30 min de margen efectivo           │ 0 min
 </code></pre>
-<h3 id="%C2%BFQu%C3%A9-cambia-con-TWS?">¿Qué cambia con TWS?<a class="anchor-link" href="#%C2%BFQu%C3%A9-cambia-con-TWS?">¶</a></h3><table>
-<thead>
-<tr>
-<th>Escenario</th>
-<th>Momento del primer aviso</th>
-<th>Tiempo para actuar</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong>Sin TWS</strong> (alarma de umbral)</td>
-<td>Cuando NTU cruza 100 (crisis ya ocurrida)</td>
-<td>0 min de margen</td>
-</tr>
-<tr>
-<td><strong>Con TWS Comp. A</strong></td>
-<td>30 minutos antes de la crisis</td>
-<td><strong>30 min de margen</strong></td>
-</tr>
-<tr>
-<td><strong>Con TWS Comp. B</strong></td>
-<td>Hasta 2h antes (señal débil)</td>
-<td><strong>Hasta 2h</strong> (con datos de lab)</td>
-</tr>
-</tbody>
-</table>
-<blockquote>
-<p>En 30 minutos, un operador experimentado puede ajustar la dosis de floculante, ver el efecto en la turbidez medida, y realizar una segunda corrección si es necesario. El margen marca la diferencia entre una intervención proactiva y una maniobra de emergencia.</p>
-</blockquote>
+<p><strong>Impacto en recuperación de agua:</strong> Una intervención 30 min antes de la crisis permite iniciar el ajuste de floculante en una zona de turbidez donde la respuesta del sistema es más rápida y el consumo de reactivo menor. La reducción de tiempo en zona de crisis se traduce directamente en mayor volumen de agua recuperada y menor riesgo de impacto en el circuito de flotación.</p>
 </div>
 </div>
 </div>
@@ -8427,59 +8424,107 @@ Sistema Inteligente de Detección Temprana de Crisis de Turbidez
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <hr/>
-<h2 id="8.-Limitaciones-T%C3%A9cnicas">8. Limitaciones Técnicas<a class="anchor-link" href="#8.-Limitaciones-T%C3%A9cnicas">¶</a></h2><p>El prototipo TWS fue desarrollado sobre un dataset sintético. Las siguientes limitaciones deben considerarse antes de cualquier implementación en producción real:</p>
-<h3 id="1.-Dataset-sint%C3%A9tico">1. Dataset sintético<a class="anchor-link" href="#1.-Dataset-sint%C3%A9tico">¶</a></h3><p>El simulador reproduce patrones operacionales realistas, pero <strong>no captura todos los modos de falla</strong> posibles en una planta real:</p>
+<h2 id="8.-Limitaciones-T%C3%A9cnicas-y-Brecha-hacia-Datos-Reales">8. Limitaciones Técnicas y Brecha hacia Datos Reales<a class="anchor-link" href="#8.-Limitaciones-T%C3%A9cnicas-y-Brecha-hacia-Datos-Reales">¶</a></h2><h3 id="Limitaciones-del-dataset-sint%C3%A9tico">Limitaciones del dataset sintético<a class="anchor-link" href="#Limitaciones-del-dataset-sint%C3%A9tico">¶</a></h3><table>
+<thead>
+<tr>
+<th>Limitación</th>
+<th>Impacto potencial</th>
+<th>Mitigación</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Simulador calibrado sobre un único espesador hipotético</td>
+<td>Parámetros de proceso (deadband, pesos de estrés) pueden no representar la planta objetivo</td>
+<td>Re-calibración con datos históricos de la planta</td>
+</tr>
+<tr>
+<td>Solo 2 modos de falla (CLAY, UF)</td>
+<td>Eventos reales pueden incluir modos combinados o no contemplados</td>
+<td>Análisis de residuos + clase "otros" en producción</td>
+</tr>
+<tr>
+<td>Fallas de sensor parametrizadas</td>
+<td>Distribución real de fallas puede diferir</td>
+<td>Análisis de calidad de señal sobre datos históricos</td>
+</tr>
+<tr>
+<td>90 días de operación</td>
+<td>Posible subrepresentación de eventos estacionales</td>
+<td>Dataset más largo al validar con datos reales</td>
+</tr>
+</tbody>
+</table>
+<h3 id="%C2%BFQu%C3%A9-se-espera-al-migrar-a-datos-reales?">¿Qué se espera al migrar a datos reales?<a class="anchor-link" href="#%C2%BFQu%C3%A9-se-espera-al-migrar-a-datos-reales?">¶</a></h3><p>Basado en la estructura del problema y los resultados obtenidos:</p>
 <ul>
-<li>Perturbaciones simultáneas (CLAY + UF al mismo tiempo)</li>
-<li>Eventos extremos fuera del rango de calibración del simulador</li>
-<li>Variabilidad de mineralogía real (distintas fuentes de alimentación)</li>
+<li><p><strong>Componente A</strong>: Se espera que el framework metodológico (features temporales + RF + CV temporal) sea transferible. El rendimiento absoluto dependerá de la calidad de los datos de etiquetado y la variabilidad operacional real. PR-AUC &gt; 0.60 en datos reales se considera un resultado exitoso de validación.</p>
+</li>
+<li><p><strong>Componente C</strong>: La regla de BedLevel es robusta y directamente aplicable si el sensor de nivel está disponible y calibrado. Requiere ajuste del umbral óptimo (actualmente 1.9 m) a las condiciones específicas de la planta.</p>
+</li>
+<li><p><strong>Componente B</strong>: Este es el componente con mayor potencial de mejora con datos reales. Si se dispone de análisis granulométrico histórico con timestamps, se estima que el PR-AUC puede superar 0.40 — umbral de utilidad operacional para alertas con acción preventiva.</p>
+</li>
 </ul>
-<p><strong>Acción requerida:</strong> Validar los modelos con datos históricos reales de la planta antes del despliegue.</p>
-<h3 id="2.-Alerta-preventiva-de-2h-sin-datos-de-laboratorio">2. Alerta preventiva de 2h sin datos de laboratorio<a class="anchor-link" href="#2.-Alerta-preventiva-de-2h-sin-datos-de-laboratorio">¶</a></h3><p>El Componente B alcanza PR-AUC = 0.134 con datos de sensor online. Este rendimiento <strong>no es suficiente para uso operacional autónomo</strong>. Para ser útil como sistema de alerta preventiva verdadera, requiere integración con datos de laboratorio (análisis granulométrico o asay de arcillas con delay 4–8 h).</p>
-<h3 id="3.-Fallas-de-sensor">3. Fallas de sensor<a class="anchor-link" href="#3.-Fallas-de-sensor">¶</a></h3><p>Los modelos fueron entrenados y evaluados con fallas de sensor inyectadas en forma realista. Sin embargo, en producción las fallas pueden ser más severas o de tipos no contemplados (corte total de comunicación, fallas de red, etc.). Se requiere una capa de validación de calidad de señal previa al modelo.</p>
-<h3 id="4.-Deriva-de-proceso-(concept-drift)">4. Deriva de proceso (concept drift)<a class="anchor-link" href="#4.-Deriva-de-proceso-(concept-drift)">¶</a></h3><p>Las propiedades del mineral, el desgaste de equipos y los cambios de setpoint operacional alteran el comportamiento del proceso a lo largo del tiempo. Los modelos deben ser <strong>re-entrenados periódicamente</strong> (recomendado: cada 3–6 meses, o ante cambios significativos de operación).</p>
-<h3 id="5.-Interpretabilidad-ante-el-operador">5. Interpretabilidad ante el operador<a class="anchor-link" href="#5.-Interpretabilidad-ante-el-operador">¶</a></h3><p>El Random Forest es un modelo de caja gris. Además del valor de probabilidad, el dashboard debe mostrar las <strong>3 variables más influyentes en cada alarma</strong> (via SHAP) para que el operador entienda por qué el sistema generó la alerta.</p>
 </div>
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=r16-proximos-pasos">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=r16-colaboracion">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <hr/>
-<h2 id="9.-Pr%C3%B3ximos-Pasos-%E2%80%94-Hoja-de-Ruta-de-Madurez">9. Próximos Pasos — Hoja de Ruta de Madurez<a class="anchor-link" href="#9.-Pr%C3%B3ximos-Pasos-%E2%80%94-Hoja-de-Ruta-de-Madurez">¶</a></h2><pre><code>MADUREZ DEL SISTEMA TWS
-═══════════════════════════════════════════════════════════════
+<h2 id="9.-Propuesta-de-Colaboraci%C3%B3n:-Validaci%C3%B3n-con-Datos-Reales-de-Planta">9. Propuesta de Colaboración: Validación con Datos Reales de Planta<a class="anchor-link" href="#9.-Propuesta-de-Colaboraci%C3%B3n:-Validaci%C3%B3n-con-Datos-Reales-de-Planta">¶</a></h2><h3 id="Objetivo">Objetivo<a class="anchor-link" href="#Objetivo">¶</a></h3><p>Validar y refinar el framework TWS sobre datos históricos de un espesador convencional de Cu/Mo en operación, con el fin de producir resultados publicables y un prototipo de sistema de alerta validado en condiciones reales.</p>
+<h3 id="Datos-m%C3%ADnimos-requeridos">Datos mínimos requeridos<a class="anchor-link" href="#Datos-m%C3%ADnimos-requeridos">¶</a></h3><table>
+<thead>
+<tr>
+<th>Dataset</th>
+<th>Descripción</th>
+<th>Período mínimo</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Series temporales de proceso</strong></td>
+<td>Tags del DCS/SCADA: turbidez overflow, nivel de lecho, torque rastrillo, caudales (feed/underflow/overflow), dosificación de floculante, densidades</td>
+<td>6–12 meses</td>
+</tr>
+<tr>
+<td><strong>Registro de eventos</strong></td>
+<td>Bitácora de eventos de turbidez: timestamp inicio/fin, causa identificada por operador (si existe)</td>
+<td>Ídem</td>
+</tr>
+<tr>
+<td><strong>Análisis de laboratorio</strong> <em>(opcional pero de alto impacto)</em></td>
+<td>Granulometría de alimentación, % arcilla, assay mineralógico — con timestamp de toma de muestra</td>
+<td>Ídem</td>
+</tr>
+</tbody>
+</table>
+<p>Los datos pueden ser anonimizados y no requieren identificación de planta o empresa para la validación técnica.</p>
+<h3 id="Lo-que-se-aporta-a-cambio">Lo que se aporta a cambio<a class="anchor-link" href="#Lo-que-se-aporta-a-cambio">¶</a></h3><ul>
+<li>✅ Código completo y documentado (repositorio GitHub, MIT license)</li>
+<li>✅ Pipeline de feature engineering y modelado reproducible</li>
+<li>✅ Análisis técnico detallado del espesador específico</li>
+<li>✅ Co-autoría en publicación técnica si los resultados lo justifican</li>
+<li>✅ Dashboard operacional prototipo si la validación es exitosa</li>
+</ul>
+<h3 id="Roadmap-de-madurez-del-sistema">Roadmap de madurez del sistema<a class="anchor-link" href="#Roadmap-de-madurez-del-sistema">¶</a></h3><pre><code>✅ FASE 0 — Proof of concept (COMPLETADO)
+   Framework metodológico · Dataset sintético calibrado
+   Comp. A: PR-AUC=0.795 · Comp. C: Acc=93.1%
 
-✅ COMPLETADO — Prototipo de investigación (dataset sintético)
-   • Componente A: Alerta temprana 30 min (PR-AUC = 0.795)
-   • Componente C: Diagnóstico CLAY/UF (Acc = 93.1%)
-   • Componente B: Alerta preventiva (PR-AUC = 0.134, limitado)
+🔜 FASE 1 — Validación con datos reales (OBJETIVO INMEDIATO)
+   Re-entrenamiento sobre datos históricos de planta
+   Ajuste de umbrales · Análisis de drift de concepto
+   Meta: PR-AUC &gt; 0.60 en Comp. A con datos reales
 
-🔜 PASO 1 — Validación con datos reales de planta
-   • Obtener historial de 6–12 meses de operación
-   • Re-entrenar y evaluar Comp. A y C con datos reales
-   • Establecer línea base de rendimiento en producción
-   Impacto esperado: validar o recalibrar métricas del prototipo
+🔜 FASE 2 — Integración de datos de laboratorio
+   Granulometría de alimentación como feature
+   Re-entrenamiento Comp. B · Meta: PR-AUC &gt; 0.40
 
-🔜 PASO 2 — Integración de datos de laboratorio
-   • Vincular análisis granulométrico (% arcilla, %−200 mesh)
-   • Re-entrenar Componente B con features de lab (delay 4–8h)
-   • Objetivo: PR-AUC &gt; 0.40 en Componente B
-   Impacto esperado: alertas preventivas de 2h operacionalmente útiles
-
-🔜 PASO 3 — Dashboard operacional en tiempo real
-   • Panel visual con semáforo de estado (verde/amarillo/rojo)
-   • Explicabilidad: top-3 variables influyentes por alarma (SHAP)
-   • Umbral ajustable por turno / supervisión
-   • Registro de alarmas y acciones (bitácora digital)
-
-🔜 PASO 4 — Sistema completo + retroalimentación
-   • Integración con sistema DCS/SCADA de la planta
-   • Loop de re-entrenamiento automático (cada 3 meses)
-   • Registro de acciones del operador para datos de entrenamiento supervisado
-═══════════════════════════════════════════════════════════════
+🔜 FASE 3 — Prototipo operacional
+   Interfaz en sala de control · Integración DCS/SCADA
+   Loop de re-entrenamiento periódico
 </code></pre>
 </div>
 </div>
@@ -8491,27 +8536,20 @@ Sistema Inteligente de Detección Temprana de Crisis de Turbidez
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <hr/>
-<h2 id="10.-Conclusiones">10. Conclusiones<a class="anchor-link" href="#10.-Conclusiones">¶</a></h2><h3 id="Lo-que-funciona-hoy-(en-dataset-sint%C3%A9tico)">Lo que funciona hoy (en dataset sintético)<a class="anchor-link" href="#Lo-que-funciona-hoy-(en-dataset-sint%C3%A9tico)">¶</a></h3><ol>
-<li><p><strong>Alerta temprana de 30 minutos (Componente A):</strong> El Random Forest ajustado detecta el <strong>79.5% de las crisis de turbidez</strong> con anticipación suficiente para que el operador actúe. Supera al baseline de umbral fijo en +17.5 pp de F1-macro.</p>
+<h2 id="10.-Conclusiones">10. Conclusiones<a class="anchor-link" href="#10.-Conclusiones">¶</a></h2><ol>
+<li><p><strong>El framework de detección temprana a 30 minutos es técnicamente viable</strong> con datos de sensor estándar de planta (PR-AUC = 0.795, Recall = 79.5%). La combinación de features temporales multi-escala sobre señales de turbidez, nivel de lecho y caudal de underflow captura efectivamente la dinámica previa a las crisis.</p>
 </li>
-<li><p><strong>Diagnóstico de causa (Componente C):</strong> Una <strong>regla simple de nivel de lecho</strong> (BedLevel &gt; 1.9 m → CLAY) alcanza 93.1% de exactitud, lo que la hace directamente implementable en operación. El modelo ML actúa como respaldo ante fallas de sensor.</p>
+<li><p><strong>El diagnóstico CLAY/UF tiene una solución elegante de proceso</strong>: la regla <code>BedLevel &gt; 1.9 m → CLAY</code> alcanza 93.1% de exactitud, siendo físicamente interpretable (diferencia en mecanismo de formación del lecho). El modelo ML actúa como redundancia ante fallas del sensor de nivel.</p>
 </li>
-<li><p><strong>Robustez a fallas de sensor:</strong> Los modelos fueron entrenados con señales realistas que incluyen spikes, stuck values y deriva. La señal medida (no limpia) es el insumo exclusivo.</p>
+<li><p><strong>La anticipación a 2 horas está limitada por disponibilidad de información mineralógica</strong>, no por la capacidad del framework de ML. Con PR-AUC = 0.134 con datos de sensor online, el Componente B es funcional pero insuficiente para uso autónomo. La integración de análisis granulométrico es el próximo paso de mayor impacto.</p>
 </li>
-</ol>
-<h3 id="Lo-que-define-el-pr%C3%B3ximo-paso-de-madurez">Lo que define el próximo paso de madurez<a class="anchor-link" href="#Lo-que-define-el-pr%C3%B3ximo-paso-de-madurez">¶</a></h3><ol start="4">
-<li><strong>Alerta preventiva de 2h (Componente B):</strong> Con datos de sensor online, el rendimiento es insuficiente para uso operacional autónomo (PR-AUC = 0.134). La integración de <strong>datos de análisis de laboratorio</strong> (% arcilla, granulometría) transformaría el Componente B en un sistema genuinamente predictivo. Este es el próximo paso crítico.</li>
-</ol>
-<h3 id="Valor-de-la-metodolog%C3%ADa">Valor de la metodología<a class="anchor-link" href="#Valor-de-la-metodolog%C3%ADa">¶</a></h3><ol start="5">
-<li><strong>El framework metodológico es transferible:</strong> El pipeline de features temporales (rolling, lags, slopes), split temporal estricto, métricas correctas para clases desbalanceadas (PR-AUC), y análisis de lead time real son aplicables a cualquier proceso de espesado similar.</li>
+<li><p><strong>La metodología es físicamente coherente</strong>: el análisis SHAP revela que el modelo prioriza las señales correctas desde la perspectiva del proceso, aumentando la confianza en la transferibilidad del framework a plantas reales.</p>
+</li>
+<li><p><strong>La validación con datos reales es el paso crítico pendiente</strong>. El framework completo — simulador, pipeline de features, modelos y análisis de interpretabilidad — está disponible en código abierto para facilitar esa colaboración.</p>
+</li>
 </ol>
 <hr/>
-<div style="background-color: #f0f7ee; border-left: 5px solid #2e6da4; padding: 20px 25px; border-radius: 4px; margin-top: 20px;">
-</div>
-<p><strong>Mensaje final para el equipo de planta:</strong></p>
-<p>TWS no reemplaza al operador — lo potencia. El sistema aporta anticipación y diagnóstico; el operador aporta contexto operacional, experiencia y decisión. La combinación de ambos es la que maximiza la recuperación de agua y la estabilidad del espesador.</p>
-<hr/>
-<h3 id="Repositorio-y-reproducibilidad">Repositorio y reproducibilidad<a class="anchor-link" href="#Repositorio-y-reproducibilidad">¶</a></h3><table>
+<h3 id="Repositorio-y-recursos">Repositorio y recursos<a class="anchor-link" href="#Repositorio-y-recursos">¶</a></h3><table>
 <thead>
 <tr>
 <th>Artefacto</th>
@@ -8520,7 +8558,11 @@ Sistema Inteligente de Detección Temprana de Crisis de Turbidez
 </thead>
 <tbody>
 <tr>
-<td>Simulador de datos</td>
+<td>Repositorio completo</td>
+<td><code>github.com/MatiasValenzuelaMunoz/Thickener-Water-Recovery-Sentinel-TWS</code></td>
+</tr>
+<tr>
+<td>Simulador de proceso</td>
 <td><code>src/simulate_fixed.py</code></td>
 </tr>
 <tr>
@@ -8528,19 +8570,19 @@ Sistema Inteligente de Detección Temprana de Crisis de Turbidez
 <td><code>notebooks/02_feature_engineering.ipynb</code></td>
 </tr>
 <tr>
-<td>Componente A — modelado</td>
+<td>Componente A — Alerta 30 min</td>
 <td><code>notebooks/03_modeling.ipynb</code></td>
 </tr>
 <tr>
-<td>Componente B — preventivo</td>
+<td>Componente B — Alerta preventiva</td>
 <td><code>notebooks/04_model_B.ipynb</code></td>
 </tr>
 <tr>
-<td>Componente C — diagnóstico</td>
+<td>Componente C — Diagnóstico</td>
 <td><code>notebooks/04_diagnosis.ipynb</code></td>
 </tr>
 <tr>
-<td>Bitácora de decisiones</td>
+<td>Bitácora de decisiones técnicas</td>
 <td><code>bitacora/</code></td>
 </tr>
 </tbody>
