@@ -7802,14 +7802,8 @@ a.anchor-link {
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <div style="background: linear-gradient(135deg, #7a7bc4 0%, #2e6da4 100%); padding: 40px 50px; border-radius: 12px; color: white; margin-bottom: 10px;">
-</div>
-<h1 style="font-size: 2.2em; margin-bottom: 8px; font-weight: 700;">
-Thickener Water Recovery Sentinel (TWS)
-</h1>
-<h2 style="font-size: 1.15em; font-weight: 300; margin-bottom: 30px; opacity: 0.9;">
-¿Podemos anticipar las crisis de turbidez antes de que ocurran?<br/>
-Un proof-of-concept de Machine Learning para espesadores Cu/Mo
-</h2>
+<h1 style="font-size: 2.2em; margin-bottom: 8px; font-weight: 700;">Thickener Water Recovery Sentinel (TWS)</h1>
+<h2 style="font-size: 1.15em; font-weight: 300; margin-bottom: 30px; opacity: 0.9;">¿Podemos anticipar las crisis de turbidez antes de que ocurran?<br/>Un proof-of-concept de Machine Learning para espesadores Cu/Mo</h2>
 <hr style="border-color: rgba(255,255,255,0.3); margin: 20px 0;"/>
 <table style="color: white; font-size: 0.95em; border: none;">
 <tr><td style="padding: 4px 24px 4px 0; opacity: 0.7;">Proceso</td><td><strong>Espesador convencional de concentrado Cu/Mo</strong></td></tr>
@@ -7817,6 +7811,7 @@ Un proof-of-concept de Machine Learning para espesadores Cu/Mo
 <tr><td style="padding: 4px 24px 4px 0; opacity: 0.7;">Estado</td><td><strong>Proof-of-concept listo para validación con datos reales de planta</strong></td></tr>
 <tr><td style="padding: 4px 24px 4px 0; opacity: 0.7;">Versión</td><td><strong>v1.0 — Febrero 2026</strong></td></tr>
 </table>
+</div>
 </div>
 </div>
 </div>
@@ -7830,8 +7825,8 @@ Un proof-of-concept de Machine Learning para espesadores Cu/Mo
 <h2 id="El-problema">El problema<a class="anchor-link" href="#El-problema">¶</a></h2><p>Las crisis de turbidez en el overflow del espesador son uno de los eventos de mayor impacto en la recuperación de agua de una planta concentradora. Cuando el overflow supera los <strong>100 NTU de forma sostenida</strong>, el agua clarificada ya no es apta para recircular al circuito de flotación: se pierde agua de proceso, se compromete la recuperación de Cu/Mo, y se activa una maniobra de emergencia que el operador debe ejecutar contra el tiempo.</p>
 <p>El sistema de monitoreo estándar — una alarma que se activa cuando la turbidez ya cruzó el umbral — avisa <strong>cuando el problema ya ocurrió</strong>. El operador recibe la alerta, identifica la causa, aplica la corrección (ajuste de floculante, caudal de purga), y espera el efecto. Todo eso toma entre 20 y 40 minutos adicionales.</p>
 <div style="background-color: #7a79b4; border-left: 4px solid #ffffff; padding: 16px 20px; border-radius: 4px; margin: 16px 0;">
-</div>
 <p><strong>La pregunta central de TWS:</strong> ¿pueden las señales del proceso — nivel de lecho, torque del rastrillo, caudal de underflow, pH, turbidez — advertir una crisis 30 minutos antes de que ocurra?</p>
+</div>
 <p>La respuesta corta es <strong>sí, en gran medida</strong>. Y el diagnóstico de la causa también es automatizable con los datos que ya existen en planta.</p>
 </div>
 </div>
@@ -8036,10 +8031,9 @@ Un proof-of-concept de Machine Learning para espesadores Cu/Mo
 <p>Aplicar la acción de UF a un evento CLAY — o viceversa — puede agravar el evento.</p>
 <h3 id="El-hallazgo:-el-nivel-de-lecho-es-casi-un-diagn%C3%B3stico-perfecto">El hallazgo: el nivel de lecho es casi un diagnóstico perfecto<a class="anchor-link" href="#El-hallazgo:-el-nivel-de-lecho-es-casi-un-diagn%C3%B3stico-perfecto">¶</a></h3><p>El análisis reveló que una <strong>regla simple de proceso</strong> supera a cualquier modelo de ML para este diagnóstico:</p>
 <div style="background-color: #777bbd; border-left: 4px solid #2e6da4; padding: 16px 20px; border-radius: 4px; margin: 16px 0;">
-</div>
-<p><strong>Si BedLevel &gt; 1.9 m → causa probable: CLAY</strong><br/>
-<strong>Si BedLevel ≤ 1.9 m → causa probable: falla de underflow</strong></p>
+<p><strong>Si BedLevel &gt; 1.9 m → causa probable: CLAY</strong><br/><strong>Si BedLevel ≤ 1.9 m → causa probable: falla de underflow</strong></p>
 <p>Exactitud en datos de evaluación: <strong>93.1%</strong> (339 de 364 eventos correctamente clasificados)</p>
+</div>
 <p>La razón es física: la arcilla forma una capa densa y rígida que eleva el lecho de forma sostenida, mientras que la falla de underflow no genera esa acumulación. Esta regla <strong>puede implementarse en el DCS hoy mismo</strong>, sin necesidad de modelos de ML.</p>
 <p>El modelo de ML actúa como segunda opinión cuando el sensor de nivel de lecho falla o cuando se busca diagnóstico temprano antes de que el lecho haya divergido.</p>
 <h3 id="Resultado-en-datos-de-evaluaci%C3%B3n-(364-eventos-de-crisis)">Resultado en datos de evaluación (364 eventos de crisis)<a class="anchor-link" href="#Resultado-en-datos-de-evaluaci%C3%B3n-(364-eventos-de-crisis)">¶</a></h3><table>
@@ -8225,12 +8219,12 @@ GANANCIA  │           │              │ ~30 minutos de margen efectivo    �
 </table>
 <p>Los datos pueden ser anonimizados. No se requiere identificar la planta o la empresa.</p>
 <h3 id="%C2%BFQu%C3%A9-se-ofrece-a-cambio?">¿Qué se ofrece a cambio?<a class="anchor-link" href="#%C2%BFQu%C3%A9-se-ofrece-a-cambio?">¶</a></h3><div style="background-color: #7a77a8; border-left: 4px solid #2e6da4; padding: 16px 20px; border-radius: 4px; margin: 16px 0;">
-</div>
 <p>✅ <strong>Análisis técnico completo del espesador</strong> — caracterización de regímenes operacionales, detección de eventos históricos, análisis de causas</p>
 <p>✅ <strong>Modelos calibrados a los datos de la planta</strong> — alerta temprana y diagnóstico ajustados al comportamiento específico del equipo</p>
 <p>✅ <strong>Código abierto y reproducible</strong> — todo el pipeline disponible en GitHub para uso, adaptación y extensión</p>
 <p>✅ <strong>Co-autoría en publicación técnica</strong> si los resultados lo justifican</p>
 <p>✅ <strong>Prototipo de dashboard operacional</strong> como siguiente paso si la validación es exitosa</p>
+</div>
 <h3 id="Hoja-de-ruta">Hoja de ruta<a class="anchor-link" href="#Hoja-de-ruta">¶</a></h3><table>
 <thead>
 <tr>
@@ -8300,9 +8294,9 @@ GANANCIA  │           │              │ ~30 minutos de margen efectivo    �
 </table>
 <hr/>
 <div style="background-color: #7e7db4; border-left: 5px solid #2e6da4; padding: 20px 25px; border-radius: 4px; margin-top: 10px;">
-</div>
 <p><strong>TWS no es un sistema que reemplaza el criterio operacional — es una herramienta que lo amplifica.</strong> El operador sigue tomando la decisión; el sistema le da más tiempo y más información para tomarla bien.</p>
 <p>Si trabajás en una planta con espesadores convencionales y tenés acceso a datos históricos, esta es una invitación a colaborar.</p>
+</div>
 <hr/>
 <h3 id="Repositorio-y-contacto">Repositorio y contacto<a class="anchor-link" href="#Repositorio-y-contacto">¶</a></h3><table>
 <thead>
