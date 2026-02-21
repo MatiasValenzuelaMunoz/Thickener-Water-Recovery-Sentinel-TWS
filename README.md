@@ -1,73 +1,135 @@
 # Thickener Water Recovery Sentinel (TWS)
 
-Synthetic dataset + baseline analytics for a tailings thickener **early-warning** system focused on **overflow turbidity** (clarified water quality), with realistic operational behavior:
-- **Clean process truth** (`Overflow_Turb_NTU_clean`)
-- **Measured tags with instrumentation failures** (`Overflow_Turb_NTU`, etc.)
-- **Event labels** derived from sustained high clean turbidity
-- Operator actions / manual vs auto mode
-- Thickener mechanics proxy: **rake torque** and **underflow rheology (yield stress)**
+A data science / ML proof-of-concept for **early detection of overflow turbidity crises** in a conventional Cu/Mo thickener. Built on a synthetic but operationally calibrated dataset (90 days · 5-min intervals · 25,920 records).
 
-## Quick start
+---
 
-### 1) Create / update dataset
+## Key Results
+
+| Component | What it does | Performance |
+|---|---|---|
+| **Early Warning (30 min)** | Predicts sustained turbidity crisis 30 min ahead | Recall 70% · PR-AUC 0.587 · beats NTU>80 baseline |
+| **Cause Diagnosis** | Classifies crisis as CLAY or Underflow Failure | 93.1% accuracy with a single process rule |
+| **Early Alert (2h)** | Detects green→degraded transition 2h ahead | PR-AUC 0.134 — limited by sensor-only data |
+
+> Full technical report: [`reports/reporte_final.html`](reports/reporte_final.html)
+
+---
+
+## Repository Structure
+
+```
+src/
+  simulate_fixed.py       # Synthetic dataset generator (SimConfig dataclass)
+  quick_checks.py         # KPI validator — event rate, turbidity distribution
+  lead_time_analysis.py   # Episode-level lead time characterization
+
+notebooks/
+  01_eda.ipynb            # Exploratory data analysis
+  02_feature_engineering.ipynb  # 324 features → FEATURES_PROD (221)
+  03_modeling.ipynb       # Early warning model (Model A) — RandomForest tuned
+  04_model_B.ipynb        # Early alert model (Model B) — green→degraded transition
+  04_diagnosis.ipynb      # CLAY vs UF diagnosis — rule + LightGBM
+
+reports/
+  reporte_final.ipynb     # Executive report (Spanish)
+  reporte_final.html      # Rendered report — open in browser
+  figures/                # Figures used in the report
+
+bitacora/                 # Engineering log — design decisions in Markdown
+data/processed/           # Generated dataset (gitignored — run simulator first)
+```
+
+---
+
+## Quick Start
+
+**1. Activate environment**
+```bash
+source .venv/Scripts/activate   # Git Bash
+# or
+.venv\Scripts\activate          # CMD / PowerShell
+```
+
+**2. Generate dataset**
 ```bash
 python src/simulate_fixed.py
 ```
+Outputs `data/processed/thickener_timeseries.parquet` (and a versioned copy).
 
-Outputs:
-- `data/processed/thickener_timeseries.parquet` (latest)
-- `data/processed/thickener_timeseries_deadband{...}_sp{...}.parquet` (versioned)
-
-### 2) Validate dataset (sanity checks)
+**3. Validate dataset KPIs**
 ```bash
-python src/quick_checks.py
+PYTHONIOENCODING=utf-8 python src/quick_checks.py
 ```
 
-This prints:
-- event prevalence (`event_now`)
-- manual vs auto fraction (`ControlMode`)
-- turbidity distribution (clean vs measured)
-- points above warning/spec thresholds
-- event type distribution
+**4. Run notebooks in order**
+```bash
+jupyter notebook notebooks/
+```
 
-## Dataset: two-layer design
+---
 
-### Layer A — Core (non-negotiable)
-**Primary outcome / truth**
-- `Overflow_Turb_NTU_clean` (process truth)
+## Dataset Design
 
-**SCADA-like measured tags (may include failures)**
-- `Overflow_Turb_NTU` (measured turbidity; contains spikes/stuck/drift/missing)
-- `RakeTorque_kNm`, `RakeTorque_pct` (highly reliable operational signal)
-- `BedLevel_m` (state proxy)
-- `Qu_m3h`, `Solids_u_pct` (underflow flow & density proxies)
-- `Floc_gpt` (flocculant dose)
-- `FeedDilution_On` (explicit dilution action)
-- `ControlMode` / `OperatorAction`
+Two turbidity columns exist by design:
 
-**Rheology truth**
-- `UF_YieldStress_Pa` (truth proxy; torque correlates with yield stress rather than Cp)
+| Column | Purpose |
+|---|---|
+| `Overflow_Turb_NTU_clean` | Ground truth — used for labels and KPI evaluation |
+| `Overflow_Turb_NTU` | Measured signal with injected spikes, drift, stuck values, missings — used as ML feature |
 
-### Layer B — High-ROI realism (optional additions)
-Planned (choose 1–2):
-- `Feed_P80_um` sample-and-hold every ~4h
-- `Water_Conductivity_uS_cm` (robust)
-- `pH_meas` + confidence flag (low reliability)
+**Labels**
+- `event_now` — 1 if clean turbidity sustained >100 NTU for ≥20 min
+- `target_event_30m` — `event_now` shifted 30 min ahead (main prediction target)
 
-## Labels
-- `event_now`: 1 when `Overflow_Turb_NTU_clean` is **sustained above 100 NTU** for `sustain_points` samples
-- `target_event_30m`: event label shifted by 30 minutes (`horizon_points`)
-- `event_type`: dominant driver during event (e.g., `CLAY`, `UF`, `FLOC`)
-- `Regime`: regime schedule used by the simulator
+**Operational regimes** — `CLAY` and `UF` campaigns injected across 90 days:
+- CLAY: ingress of fine clay → high rigid bed, elevated flocculant consumption
+- UF (Underflow Failure): degraded purge system → solids accumulation, falling underflow flow
 
-## EDA “Definition of Done”
-The portfolio deliverable targets:
-1. Timeline: CLEAN vs measured turbidity + bands + events + manual shading
-2. Event episodes: duration vs severity
-3. Torque vs Yield Stress (and Torque vs Cp comparison)
-4. Turbidity sensor error analysis (measured - clean)
-5. Efficiency trade-off view (water recovery proxy vs quality, plus UF density & rheology context)
+**Calibrated KPIs**
 
-## Notes
-- The simulator calibrates turbidity scale to hit a target event rate (default ~5%).
-- Instrumentation failures are injected **only** into measured tags (never into `Overflow_Turb_NTU_clean`).
+| Zone | Criterion | Fraction |
+|---|---|---|
+| Green | Turbidity < 50 NTU | ~66% |
+| Degraded | 50–100 NTU | ~24% |
+| Crisis | >100 NTU sustained ≥20 min | ~5% |
+
+---
+
+## Models
+
+### Model A — Early Warning (30 min horizon)
+- **Algorithm**: RandomForest (tuned, `n_iter=20`)
+- **Features**: `FEATURES_PROD` — 221 features, no latent variables
+- **Split**: temporal, train days 0–60 / test days 60–90
+- **CV**: `TimeSeriesSplit(n_splits=3)`, primary metric PR-AUC
+- **Test results**: PR-AUC 0.587 · ROC-AUC 0.980 · Recall 70.1% · Threshold 0.586
+- **Top signals**: rolling turbidity (15–30 min), underflow flow (Qu), bed level
+
+### Model B — Early Alert (2h horizon)
+- Operates only when process is in the green zone (NTU < 50)
+- **Honest performance without regime leakage**: Test PR-AUC ≈ 0.134
+- **Conclusion**: 2h anticipation requires upstream mineralogy data (grain size assays, mine planning) not available in the standard DCS sensor stream
+
+### Diagnosis — CLAY vs Underflow Failure
+- **Primary rule**: `BedLevel > 1.9 m → CLAY`, else `UF` — 93.1% accuracy
+- **ML complement** (LightGBM): ROC-AUC 0.836 — acts as second opinion when bed level sensor fails or divergence hasn't yet occurred
+
+---
+
+## Next Steps
+
+| Phase | Goal | Status |
+|---|---|---|
+| 0 — Proof of concept | Validate framework on synthetic data | ✅ Complete |
+| 1 — Real data validation | Retrain and evaluate on plant historian | Pending |
+| 2 — Lab data integration | Add grain size assays for 2h early alert | Pending |
+| 3 — Operational prototype | Control room dashboard · DCS integration | Pending |
+
+---
+
+## Contact
+
+**Matias Valenzuela** — [linkedin.com/in/matiasvalenzuelam](https://www.linkedin.com/in/matiasvalenzuelam/)
+
+If you work with instrumented thickeners and have access to historical process data, this is an open invitation to collaborate on Phase 1.
