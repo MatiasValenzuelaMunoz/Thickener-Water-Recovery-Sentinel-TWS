@@ -1,5 +1,7 @@
 # Bitácora — Run de validación del simulador (v4)
 
+> 📋 **Registro histórico — etapa temprana (2026-01-28).** deadband=0.33, event_limit=70 NTU, 23 columnas. Configuración final del proyecto usa deadband=0.27, event_limit=100 NTU, 43 columnas.
+
 - Fecha: 2026-01-28
 - Título: Dataset sintético generado + validación rápida OK (90 días @ 5 min)
 

@@ -1,5 +1,7 @@
 # Bitácora — Dataset sintético y calibración
 
+> ⚠️ **SUPERSEDED:** Los umbrales definidos aquí (event_limit_NTU=70, spec_limit_NTU=80) fueron reemplazados en la calibración final por 100/200 NTU respectivamente. FLOC fue eliminado como modo de falla (ver `06_descarte_floc.md`). Este archivo se conserva como registro histórico de las definiciones iniciales.
+
 ## Objetivo
 Generar un dataset sintético realista para prototipar detección temprana de deterioro de clarificación, sin exponer datos sensibles.
 

@@ -1,5 +1,7 @@
 # Resultados — KPIs del dataset (evidencia)
 
+> 📋 **Registro histórico — etapa temprana (2026-01-28).** Corresponde a deadband=0.33 y event_limit=70 NTU. Los KPIs actuales del proyecto usan deadband=0.27, event_limit=100 NTU. Ver `05_bitacora.md` para la calibración final.
+
 Fecha: 2026-01-28
 
 ## Dataset

@@ -1,5 +1,7 @@
 # Bitácora — Feed dilution físicamente consistente (Qf_total)
 
+> 📋 **Registro histórico — etapa temprana (2026-01-28).** Documenta la incorporación de Qf_total como variable de dilución. Esta decisión se mantuvo en versiones posteriores.
+
 - Fecha: 2026-01-28
 - Título: Se incorpora dilución explícita con caudal total a espesador (Qf_total)
 
